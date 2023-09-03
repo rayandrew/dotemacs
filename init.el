@@ -16,6 +16,7 @@
 (defconst rs/emacs-dir user-emacs-directory)
 (defconst rs/local-dir (concat rs/emacs-dir ".local/"))
 (defconst rs/env-file (concat rs/local-dir "env"))
+(defconst rs/help-key "C-/")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Straight
@@ -42,13 +43,28 @@
 (scroll-bar-mode -1) ;; Disable the scroll bars
 (setq inhibit-startup-screen t) ;; Disable splash screen
 (setq backup-directory-alist '(("." . "~/.config.d/emacs/backup"))
-      backup-by-copying t    ; Don't delink hardlinks
-      version-control t      ; Use version numbers on backups
-      delete-old-versions t  ; Automatically delete excess backups
-      kept-new-versions 20   ; how many of the newest versions to keep
-      kept-old-versions 5    ; and how many of the old
-      )
+      backup-by-copying t    
+      version-control t      
+      delete-old-versions t  
+      kept-new-versions 20   
+      kept-old-versions 5)
 (defalias 'yes-or-no-p 'y-or-n-p)
+
+(setq help-char nil)
+(global-set-key (kbd rs/help-key) 'help-command)
+
+(add-hook 'prog-mode-hook 'display-line-numbers-mode)
+
+;; Compilation mode
+;; (setq compilation-scroll-output t) ;; enable this if you want to follow scrolling
+(setq compilation-scroll-output 'first-error)
+
+;; Shell mode
+;; (setq shell-file-name "zsh")
+;; (setq shell-command-switch "-ic")
+
+;; Splitting behavior
+(setq split-width-threshold nil)
 
 (defun rs/reload-init ()
   (interactive)
@@ -71,38 +87,9 @@
 (use-package gruber-darker-theme
  :config
  (load-theme 'gruber-darker t))
-
-;; (straight-use-package
-;;  '(nano-emacs :type git :host github :repo "rougier/nano-emacs"))
-;; (setq nano-font-family-monospaced "UbuntuMono Nerd Font Mono")
-;; (setq nano-font-size 16)
-;; (require 'nano-faces)
-;; (require 'nano-theme)		     
-;; (require 'nano-theme-dark)
-;; (nano-theme-set-dark)
-;; (nano-faces)
-;; (nano-theme)
-;; (require 'nano-modeline)
-;; (let ((inhibit-message t))
-;;   (message "Welcome to GNU Emacs / N Λ N O edition")
-;;   (message (format "Initialization time: %s" (emacs-init-time))))
-
-;; (use-package catppuccin-theme
-;;   :straight (catppuccin :type git :host github :repo "catppuccin/emacs" :branch "main")
-;;   :config
-;;   (setq catppuccin-flavor 'mocha)
-;;   (load-theme 'catppuccin t))
-
-;; (use-package autothemer :ensure t)
-;; (use-package rose-pine-theme
-;;   :requires autothemer
-;;   :straight (rose-pine-theme
-;; 	     :type git
-;; 	     :host github
-;; 	     :repo "konrad1977/pinerose-emacs"
-;; 	     :branch "main")
-;;   :config
-;;   (load-theme 'rose-pine t)) 
+;; (use-package gruvbox-theme
+;;  :config
+;;  (load-theme 'gruvbox-dark-medium t))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Vertico
@@ -138,19 +125,78 @@
 (use-package vertico-directory
   :after vertico
   :ensure nil
-  ;; More convenient directory navigation commands
   :bind (:map vertico-map
               ("RET" . vertico-directory-enter)
               ("DEL" . vertico-directory-delete-char)
               ("M-DEL" . vertico-directory-delete-word))
-  ;; Tidy shadowed file names
   :hook (rfn-eshadow-update-overlay . vertico-directory-tidy))
+
+(use-package orderless
+  :demand t
+  :init
+  (setq completion-styles '(orderless basic)
+        completion-category-defaults nil
+        completion-category-overrides '((file (styles basic partial-completion)))))
+
+(use-package savehist
+  :init
+  (savehist-mode))
+
+(use-package emacs
+  :init
+  (defun crm-indicator (args)
+    (cons (format "[CRM%s] %s"
+                  (replace-regexp-in-string
+                   "\\`\\[.*?]\\*\\|\\[.*?]\\*\\'" ""
+                   crm-separator)
+                  (car args))
+          (cdr args)))
+  (advice-add #'completing-read-multiple :filter-args #'crm-indicator)
+
+  (setq minibuffer-prompt-properties
+        '(read-only t cursor-intangible t face minibuffer-prompt))
+  (add-hook 'minibuffer-setup-hook #'cursor-intangible-mode)
+  (setq enable-recursive-minibuffers t))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Consult
 ;;;;;;;;;;;;;;;;;;;;;;;;
 (use-package consult
   :bind (("C-x b" . consult-buffer)))
+
+;; Affe
+(use-package affe
+  :bind (("C-x p" . affe-find)
+	 ("C-x C-p" . affe-grep))
+  :config
+  (consult-customize affe-grep :preview-key "M-."))
+
+;; Marginalia
+(use-package marginalia
+  :bind (:map minibuffer-local-map
+              ("M-A" . marginalia-cycle))
+  :init
+  (marginalia-mode))
+
+(use-package embark
+  :ensure t
+  :bind (("C-." . embark-act)
+	 ("C-;" . embark-dwim)        
+	 ("C-/ b" . embark-bindings))
+  :init
+  (setq embark-help-key rs/help-key)
+  (setq prefix-help-command #'embark-prefix-help-command)
+  (add-hook 'eldoc-documentation-functions #'embark-eldoc-first-target)
+  :config
+  (add-to-list 'display-buffer-alist
+               '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
+                 nil
+                 (window-parameters (mode-line-format . none)))))
+
+(use-package embark-consult
+  :ensure t
+  :hook
+  (embark-collect-mode . consult-preview-at-point-mode))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Undo
@@ -233,6 +279,9 @@ unreadable. Returns the names of envvars that were changed."
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Windowing
 ;;;;;;;;;;;;;;;;;;;;;;;;
+(use-package ace-window
+  :bind (("C-x o" . ace-window)))
+
 (use-package windmove
   :bind (("C-l" . windmove-right)
 	 ("C-h" . windmove-left)
@@ -240,6 +289,17 @@ unreadable. Returns the names of envvars that were changed."
 	 ("C-k" . windmove-up))
   :config
   (setq windmove-wrap-around nil))
+
+;; (use-package hydra
+;;   :demand t
+;;   :bind (("C-x" . hydra-other-window/body))
+;;   :init
+;;   (defhydra hydra-other-window
+;;     (global-map "C-x"
+;; 		:color red)
+;;     "other window"
+;;     ("<right>" other-window "→")
+;;     ("<left>" (lambda () (interactive) (other-window -1)) "←")))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Dired
@@ -253,6 +313,13 @@ unreadable. Returns the names of envvars that were changed."
       (concat dired-omit-files "\\|^\\..+$"))
 (setq-default dired-dwim-target t)
 (setq dired-listing-switches "-alh")
+
+
+;; https://emacs.stackexchange.com/a/36851
+(defun rs/dired-copy-path-at-point ()
+    (interactive)
+    (dired-copy-filename-as-kill 0))
+(define-key dired-mode-map (kbd "W") 'rs/dired-copy-path-at-point)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Terminal
@@ -327,10 +394,20 @@ frame if FRAME is nil, and to 1 if AMT is nil."
   :config
   (global-hl-line-mode))
 
-;; Marginalia
-(use-package marginalia
-  :bind (:map minibuffer-local-map
-              ("M-A" . marginalia-cycle))
-  :init
-  (marginalia-mode))
+;; Multiple Cursors
+(use-package multiple-cursors
+  :defer t)
+(global-set-key (kbd "C-S-c C-S-c") 'mc/edit-lines)
+(global-set-key (kbd "C-M-SPC")     'set-rectangular-region-anchor)
+(global-set-key (kbd "C->")         'mc/mark-next-like-this)
+(global-set-key (kbd "C-<")         'mc/mark-previous-like-this)
+(global-set-key (kbd "C-c C-<")     'mc/mark-all-like-this)
+(global-set-key (kbd "C-\"")        'mc/skip-to-next-like-this)
+(global-set-key (kbd "C-:")         'mc/skip-to-previous-like-this)
 
+;;;;;;;;;;;;;;;;;;;;;;;;
+;; Tramp
+;;;;;;;;;;;;;;;;;;;;;;;
+;; Fixing tramp cannot get all the path defined in `profile` config
+;; https://stackoverflow.com/a/61169654
+(add-to-list 'tramp-remote-path 'tramp-own-remote-path)
