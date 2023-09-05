@@ -8,8 +8,9 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
-;; Constp
+;; Constants
 ;;;;;;;;;;;;;;;;;;;;;;;;
+
 (setq user-full-name "Ray Sinurat")
 (setq user-mail-address "rs@rs.ht")
 
@@ -22,6 +23,7 @@
 ;; Straight
 ;; Package Manager
 ;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defvar bootstrap-version)
 (let ((bootstrap-file
        (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
@@ -38,6 +40,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Default
 ;;;;;;;;;;;;;;;;;;;;;;;;
+
+(setq gc-cons-threshold 100000000)
+(setq read-process-output-max (* 1024 1024))
+
 (menu-bar-mode -1) ;; Disable the menu bar
 (tool-bar-mode -1) ;; Disable the tool bar
 (scroll-bar-mode -1) ;; Disable the scroll bars
@@ -72,9 +78,14 @@
 (define-key global-map (kbd "C-M-r") 'rs/reload-init)
 ;; (electric-pair-mode 1)
 
+;; Recent Files
+(recentf-mode t)
+(setq recentf-max-saved-items 50)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Use package
 ;;;;;;;;;;;;;;;;;;;;;;;;
+
 (straight-use-package 'use-package)
 (use-package straight
   :custom
@@ -83,10 +94,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Theme
 ;;;;;;;;;;;;;;;;;;;;;;;;
+
 (set-face-attribute 'default nil :family "UbuntuMono Nerd Font Mono" :height 160)
 (use-package gruber-darker-theme
- :config
- (load-theme 'gruber-darker t))
+  :config
+  (load-theme 'gruber-darker t))
 ;; (use-package gruvbox-theme
 ;;  :config
 ;;  (load-theme 'gruvbox-dark-medium t))
@@ -95,15 +107,18 @@
 ;; Vertico
 ;; Completion Framework
 ;;;;;;;;;;;;;;;;;;;;;;;;
+
 (straight-use-package '(vertico :files (:defaults "extensions/*")
                                 :includes (vertico-buffer
                                            vertico-directory
                                            vertico-flat
+					   vertico-grid
                                            vertico-indexed
                                            vertico-mouse
                                            vertico-quick
                                            vertico-repeat
-                                           vertico-reverse)))
+                                           vertico-reverse
+					   vertico-multiform)))
 
 (use-package vertico
   :ensure t
@@ -116,11 +131,39 @@
     (define-key vertico-map (kbd "DEL") #'vertico-directory-delete-word)
     (define-key vertico-map (kbd "M-d") #'vertico-directory-delete-char)))
 
-;; (use-package vertico-flat
-;;   :after vertico
-;;   :ensure nil
-;;   :init
-;;   (vertico-flat-mode t))
+(use-package vertico-indexed
+  :after vertico
+  :ensure nil)
+
+(use-package vertico-grid
+  :after vertico
+  :ensure nil)
+
+(use-package vertico-flat
+  :after vertico
+  :ensure nil)
+  ;; :init
+  ;; (vertico-flat-mode t))
+
+(use-package vertico-multiform
+  :after vertico
+  :ensure nil
+  :init
+  (vertico-multiform-mode)
+  :config
+  (setq vertico-multiform-categories
+	'((file flat (vertico-cycle . t))))
+  (setq vertico-multiform-commands
+	'((consult-imenu buffer indexed)
+	  (affe-find buffer indexed)
+	  (affe-grep buffer indexed)
+	  (execute-extended-command flat (vertico-cycle . t)))))
+
+(use-package vertico-repeat
+  :after vertico
+  :ensure nil
+  :bind (("M-r" . vertico-repeat))
+  :hook (minibuffer-setup . vertico-repeat-save))
 
 (use-package vertico-directory
   :after vertico
@@ -161,13 +204,17 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Consult
 ;;;;;;;;;;;;;;;;;;;;;;;;
+
 (use-package consult
-  :bind (("C-x b" . consult-buffer)))
+  :bind (("C-x b" . consult-buffer)
+	 ("C-x r" . consult-recent-file)
+	 ("C-x :" . consult-goto-line)
+	 ("C-x s" . consult-line)))
 
 ;; Affe
 (use-package affe
-  :bind (("C-x p" . affe-find)
-	 ("C-x C-p" . affe-grep))
+  :bind (("C-x C-p" . affe-find)
+	 ("C-x C-/" . affe-grep))
   :config
   (consult-customize affe-grep :preview-key "M-."))
 
@@ -201,6 +248,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Undo
 ;;;;;;;;;;;;;;;;;;;;;;;;
+
 (use-package undo-fu-session
   :init
   (undo-fu-session-global-mode))
@@ -229,13 +277,13 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ENV
 ;;;;;;;;;;;;;;;;;;;;;;;;
-;; https://www.reddit.com/r/emacs/comments/f8xwau/hack_replace_execpathfromshell/
-;; Credits to DOOM Emacs
 
 (defun rs/update-env ()
   (interactive)
   (shell-command  (concat "printenv > " rs/env-file)))
 
+;; https://www.reddit.com/r/emacs/comments/f8xwau/hack_replace_execpathfromshell/
+;; Credits to DOOM Emacs
 (defun rs/load-envvars-file (file &optional noerror)
   "Read and set envvars from FILE.
 If NOERROR is non-nil, don't throw an error if the file doesn't exist or is
@@ -279,6 +327,7 @@ unreadable. Returns the names of envvars that were changed."
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Windowing
 ;;;;;;;;;;;;;;;;;;;;;;;;
+
 (use-package ace-window
   :bind (("C-x o" . ace-window)))
 
@@ -304,32 +353,68 @@ unreadable. Returns the names of envvars that were changed."
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Dired
 ;;;;;;;;;;;;;;;;;;;;;;;;
-;; (use-package dired-x
-;;   :ensure nil
-;;   :straight nil)
-(use-package dired+)
-(define-key dired-mode-map (kbd "-") 'dired-up-directory)
-(setq dired-omit-files
-      (concat dired-omit-files "\\|^\\..+$"))
-(setq-default dired-dwim-target t)
-(setq dired-listing-switches "-alh")
+
+(use-package dired
+  :ensure nil
+  :straight (:type built-in)
+  :custom
+  (dired-dwim-target t)
+  (dired-listing-switches "-alh"))
 
 
 ;; https://emacs.stackexchange.com/a/36851
 (defun rs/dired-copy-path-at-point ()
-    (interactive)
-    (dired-copy-filename-as-kill 0))
+  (interactive)
+  (dired-copy-filename-as-kill 0))
+
 (define-key dired-mode-map (kbd "W") 'rs/dired-copy-path-at-point)
+(define-key dired-mode-map (kbd "-") 'dired-up-directory)
+
+(use-package dired-x
+  :after dired
+  :ensure nil
+  :straight nil
+  :config
+  (setq dired-omit-files
+      (concat dired-omit-files "\\|^\\..+$")))
+
+(use-package dired-subtree
+  :after dired
+  :bind (:map dired-mode-map
+	      ("i" .  dired-subtree-toggle)))
+
+(use-package diredfl
+  :after dired
+  :config
+  (add-hook 'dired-mode-hook 'diredfl-mode))
+
+(use-package dired+
+  :after dired
+  :init
+  (setq diredp-hide-details-initially-flag nil))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Terminal
 ;;;;;;;;;;;;;;;;;;;;;;;;
+
 (use-package vterm
   :ensure t)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
+;; Tramp
+;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Fixing tramp cannot get all the path defined in `profile` config
+;; https://stackoverflow.com/a/61169654
+(add-to-list 'tramp-remote-path 'tramp-own-remote-path)
+
+;; Tramp SSH password
+(setq password-cache-expiry nil)
+
+;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Tree Sitter
 ;;;;;;;;;;;;;;;;;;;;;;;;
+
 (use-package tree-sitter)
 (use-package tree-sitter-langs
   :after tree-sitter)
@@ -340,14 +425,17 @@ unreadable. Returns the names of envvars that were changed."
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Git
 ;;;;;;;;;;;;;;;;;;;;;;;;
+
 (use-package magit
   :bind (("C-x g" . magit)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Utils
-;;;;;;;;;;;;;;;;;;;;;;;
-;; Tramp SSH password
-(setq password-cache-expiry nil)
+;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; flymake
+(use-package flycheck
+  :demand t)
 
 ;; Move text
 (use-package move-text
@@ -405,9 +493,181 @@ frame if FRAME is nil, and to 1 if AMT is nil."
 (global-set-key (kbd "C-\"")        'mc/skip-to-next-like-this)
 (global-set-key (kbd "C-:")         'mc/skip-to-previous-like-this)
 
+;; Which Key
+(use-package which-key
+  :config
+  (which-key-mode))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;
-;; Tramp
-;;;;;;;;;;;;;;;;;;;;;;;
-;; Fixing tramp cannot get all the path defined in `profile` config
-;; https://stackoverflow.com/a/61169654
-(add-to-list 'tramp-remote-path 'tramp-own-remote-path)
+;; Lsp
+;;;;;;;;;;;;;;;;;;;;;;;;
+
+(straight-use-package '(lsp-mode :files (:defaults "clients/*")
+                                :includes (lsp-nix)))
+
+(defun rs/lsp-mode-setup ()
+  (setq lsp-headerline-breadcrumb-segments '(path-up-to-project file symbols))
+  (lsp-headerline-breadcrumb-mode))
+
+(use-package lsp-mode
+  :commands (lsp lsp-deferred)
+  :hook ((lsp-mode . rs/lsp-mode-setup))
+  :init
+  (setq lsp-keymap-prefix "C-c l")
+  :custom
+  ;; what to use when checking on-save. "check" is default, I prefer clippy
+  (lsp-rust-analyzer-cargo-watch-command "clippy")
+  (lsp-eldoc-render-all t)
+  (lsp-idle-delay 0.6)
+  ;; enable / disable the hints as you prefer:
+  (lsp-inlay-hint-enable t)
+  ;; These are optional configurations. See https://emacs-lsp.github.io/lsp-mode/page/lsp-rust-analyzer/#lsp-rust-analyzer-display-chaining-hints for a full list
+  (lsp-rust-analyzer-display-lifetime-elision-hints-enable "skip_trivial")
+  (lsp-rust-analyzer-display-chaining-hints t)
+  (lsp-rust-analyzer-display-lifetime-elision-hints-use-parameter-names nil)
+  (lsp-rust-analyzer-display-closure-return-type-hints t)
+  (lsp-rust-analyzer-display-parameter-hints nil)
+  (lsp-rust-analyzer-display-reborrow-hints nil)
+  :config
+  (lsp-enable-which-key-integration t)
+  (setq read-process-output-max (* 1024 1024))
+  (add-hook 'lsp-mode-hook 'lsp-ui-mode))
+
+(use-package lsp-ui
+  :commands lsp-ui-mode
+  :custom
+  (lsp-ui-peek-always-show t)
+  (lsp-ui-sideline-show-hover t)
+  (lsp-ui-doc-enable nil))
+
+;;;;;;;;;;;;;;;;;;;;;;;;
+;; AutoComplete
+;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; (use-package company
+;;   :after lsp-mode
+;;   :hook (lsp-mode . company-mode)
+;;   :bind (:map company-active-map
+;;          ("<tab>" . company-complete-selection))
+;;         (:map lsp-mode-map
+;;          ("<tab>" . company-indent-or-complete-common))
+;;   :custom
+;;   (company-minimum-prefix-length 1)
+;;   (company-idle-delay 0.0))
+
+(use-package yasnippet
+  :ensure
+  :config
+  (yas-reload-all)
+  (add-hook 'prog-mode-hook 'yas-minor-mode)
+  (add-hook 'text-mode-hook 'yas-minor-mode))
+
+(use-package company
+  ;; :after lsp-mode
+  :hook (lsp-mode . company-mode)
+  :ensure
+  :bind
+  (:map company-active-map
+              ("C-n". company-select-next)
+              ("C-p". company-select-previous)
+              ("M-<". company-select-first)
+              ("M->". company-select-last))
+  (:map company-mode-map
+        ("<tab>". tab-indent-or-complete)
+        ("TAB". tab-indent-or-complete))
+  :custom
+  (company-minimum-prefix-length 1)
+  (company-idle-delay 0.0))
+
+(defun company-yasnippet-or-completion ()
+  (interactive)
+  (or (do-yas-expand)
+      (company-complete-common)))
+
+(defun check-expansion ()
+  (save-excursion
+    (if (looking-at "\\_>") t
+      (backward-char 1)
+      (if (looking-at "\\.") t
+        (backward-char 1)
+        (if (looking-at "::") t nil)))))
+
+(defun do-yas-expand ()
+  (let ((yas/fallback-behavior 'return-nil))
+    (yas/expand)))
+
+(defun tab-indent-or-complete ()
+  (interactive)
+  (if (minibufferp)
+      (minibuffer-complete)
+    (if (or (not yas/minor-mode)
+            (null (do-yas-expand)))
+        (if (check-expansion)
+            (company-complete-common)
+          (indent-for-tab-command)))))
+
+(use-package company-box
+  :after company
+  :hook (company-mode . company-box-mode))
+
+;; Consult LSP
+(use-package consult-lsp)
+
+;;;;;;;;;;;;;;;;;;;;;;;;
+;; Programming Language
+;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Latex
+(use-package lsp-latex
+  :ensure lsp-mode
+  :after lsp-mode
+  :demand t
+  :hook ((latex-mode-hook . lsp-deferred)
+	 (tex-mode-hook . lsp-deferred)
+	 (bibtex-mode-hook . lsp-deferred)
+	 (yatex-mode-hook . lsp-deferred)))
+
+;; Nix
+(use-package lsp-nix
+  :ensure lsp-mode
+  :after (lsp-mode)
+  :demand t
+  :custom
+  (lsp-nix-nil-formatter ["nixpkgs-fmt"]))
+
+(use-package nix-mode
+  :hook (nix-mode . lsp-deferred)
+  :ensure t)
+
+;; Rust
+(use-package rustic
+  :ensure
+  :bind (:map rustic-mode-map
+              ("M-j" . lsp-ui-imenu)
+              ("M-?" . lsp-find-references)
+              ("C-c C-c l" . flycheck-list-errors)
+              ("C-c C-c a" . lsp-execute-code-action)
+              ("C-c C-c r" . lsp-rename)
+              ("C-c C-c q" . lsp-workspace-restart)
+              ("C-c C-c Q" . lsp-workspace-shutdown)
+              ("C-c C-c s" . lsp-rust-analyzer-status)
+              ("C-c C-c e" . lsp-rust-analyzer-expand-macro)
+              ("C-c C-c d" . dap-hydra)
+              ("C-c C-c h" . lsp-ui-doc-glance))
+  :config
+  ;; uncomment for less flashiness
+  ;; (setq lsp-eldoc-hook nil)
+  ;; (setq lsp-enable-symbol-highlighting nil)
+  ;; (setq lsp-signature-auto-activate nil)
+
+  ;; comment to disable rustfmt on save
+  (add-hook 'rustic-mode-hook 'rs/rustic-mode-hook))
+
+(defun rs/rustic-mode-hook ()
+  ;; so that run C-c C-c C-r works without having to confirm, but don't try to
+  ;; save rust buffers that are not file visiting. Once
+  ;; https://github.com/brotzeit/rustic/issues/253 has been resolved this should
+  ;; no longer be necessary.
+  (when buffer-file-name
+    (setq-local buffer-save-without-query t))
+  (add-hook 'before-save-hook 'lsp-format-buffer nil t))
