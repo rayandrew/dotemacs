@@ -1,11 +1,14 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Welkommen
 ;;;;;;;;;;;;;;;;;;;;;;;;
-
-;;;;;;;;;;;;;;;;;;;;;;;;
+;; 
 ;; R/S Config
 ;; rs@rs.ht
+;;
 ;;;;;;;;;;;;;;;;;;;;;;;;
+
+(when (version< emacs-version "27")
+  (load (concat user-emacs-directory "early-init.el")))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Constants
@@ -17,7 +20,7 @@
 (defconst rs/emacs-dir user-emacs-directory)
 (defconst rs/local-dir (concat rs/emacs-dir ".local/"))
 (defconst rs/env-file (concat rs/local-dir "env"))
-(defconst rs/help-key "C-/")
+(defconst rs/help-key "C-?")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Straight
@@ -41,13 +44,8 @@
 ;; Default
 ;;;;;;;;;;;;;;;;;;;;;;;;
 
-(setq gc-cons-threshold 100000000)
+(setq initial-major-mode 'fundamental-mode)
 (setq read-process-output-max (* 1024 1024))
-
-(menu-bar-mode -1) ;; Disable the menu bar
-(tool-bar-mode -1) ;; Disable the tool bar
-(scroll-bar-mode -1) ;; Disable the scroll bars
-(setq inhibit-startup-screen t) ;; Disable splash screen
 (setq backup-directory-alist '(("." . "~/.config.d/emacs/backup"))
       backup-by-copying t    
       version-control t      
@@ -55,6 +53,12 @@
       kept-new-versions 20   
       kept-old-versions 5)
 (defalias 'yes-or-no-p 'y-or-n-p)
+
+;; Encoding
+(prefer-coding-system 'utf-8)
+(set-default-coding-systems 'utf-8)
+(set-terminal-coding-system 'utf-8)
+(set-keyboard-coding-system 'utf-8)
 
 (setq help-char nil)
 (global-set-key (kbd rs/help-key) 'help-command)
@@ -96,12 +100,22 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;
 
 (set-face-attribute 'default nil :family "UbuntuMono Nerd Font Mono" :height 160)
-(use-package gruber-darker-theme
+
+;; (use-package gruber-darker-theme
+;;   :config
+;;   (load-theme 'gruber-darker t))
+
+(use-package doom-themes
+  :ensure t
   :config
-  (load-theme 'gruber-darker t))
-;; (use-package gruvbox-theme
-;;  :config
-;;  (load-theme 'gruvbox-dark-medium t))
+  (setq doom-themes-enable-bold t    
+        doom-themes-enable-italic t)
+  (load-theme 'doom-sourcerer t)
+  (doom-themes-visual-bell-config)
+  (doom-themes-neotree-config)
+  (setq doom-themes-treemacs-theme "doom-atom")
+  (doom-themes-org-config)	       
+  (doom-themes-treemacs-config))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Vertico
@@ -208,8 +222,8 @@
 (use-package consult
   :bind (("C-x b" . consult-buffer)
 	 ("C-x r" . consult-recent-file)
-	 ("C-x :" . consult-goto-line)
-	 ("C-x s" . consult-line)))
+	 ("C-:" . consult-goto-line)
+	 ("C-s" . consult-line)))
 
 ;; Affe
 (use-package affe
@@ -229,7 +243,7 @@
   :ensure t
   :bind (("C-." . embark-act)
 	 ("C-;" . embark-dwim)        
-	 ("C-/ b" . embark-bindings))
+	 ("C-<return>" . embark-bindings))
   :init
   (setq embark-help-key rs/help-key)
   (setq prefix-help-command #'embark-prefix-help-command)
@@ -430,75 +444,6 @@ unreadable. Returns the names of envvars that were changed."
   :bind (("C-x g" . magit)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
-;; Utils
-;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; flymake
-(use-package flycheck
-  :demand t)
-
-;; Move text
-(use-package move-text
-  :bind (("M-p" . move-text-up)
-	 ("M-n" . move-text-down)))
-
-;; Compilation Mode
-;; https://github.com/rexim/dotfiles/blob/25f8ddc6717e56f110e812fd0cec2f1a1dc9d8be/.emacs#L10
-compilation-error-regexp-alist-alist
-(add-to-list 'compilation-error-regexp-alist
-             '("\\([a-zA-Z0-9\\.]+\\)(\\([0-9]+\\)\\(,\\([0-9]+\\)\\)?) \\(Warning:\\)?"
-               1 2 (4) (5)))
-
-;; Zoom In/Out
-;; https://stackoverflow.com/a/60641769
-;; Resize the whole frame, and not only a window
-;; Adapted from https://stackoverflow.com/a/24714383/5103881
-
-(defun rs/zoom-frame (&optional amt frame)
-  "Increaze FRAME font size by amount AMT. Defaults to selected
-frame if FRAME is nil, and to 1 if AMT is nil."
-  (interactive "p")
-  (let* ((frame (or frame (selected-frame)))
-         (font (face-attribute 'default :font frame))
-         (size (font-get font :size))
-         (amt (or amt 1))
-         (new-size (+ size amt)))
-    (set-frame-font (font-spec :size new-size) t `(,frame))
-    (message "Frame's font new size: %d" new-size)))
-
-(defun rs/zoom-frame-out (&optional amt frame)
-  "Call `rs/zoom-frame' with negative argument."
-  (interactive "p")
-  (rs/zoom-frame (- (or amt 1)) frame))
-
-(global-set-key (kbd "C-=") 'rs/zoom-frame)
-(global-set-key (kbd "C--") 'rs/zoom-frame-out)
-(global-set-key (kbd "<C-down-mouse-4>") 'rs/zoom-frame)
-(global-set-key (kbd "<C-down-mouse-5>") 'rs/zoom-frame-out)
-
-;; Highlight
-(use-package hl-line
-  :ensure nil
-  :config
-  (global-hl-line-mode))
-
-;; Multiple Cursors
-(use-package multiple-cursors
-  :defer t)
-(global-set-key (kbd "C-S-c C-S-c") 'mc/edit-lines)
-(global-set-key (kbd "C-M-SPC")     'set-rectangular-region-anchor)
-(global-set-key (kbd "C->")         'mc/mark-next-like-this)
-(global-set-key (kbd "C-<")         'mc/mark-previous-like-this)
-(global-set-key (kbd "C-c C-<")     'mc/mark-all-like-this)
-(global-set-key (kbd "C-\"")        'mc/skip-to-next-like-this)
-(global-set-key (kbd "C-:")         'mc/skip-to-previous-like-this)
-
-;; Which Key
-(use-package which-key
-  :config
-  (which-key-mode))
-
-;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Lsp
 ;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -529,7 +474,6 @@ frame if FRAME is nil, and to 1 if AMT is nil."
   (lsp-rust-analyzer-display-parameter-hints nil)
   (lsp-rust-analyzer-display-reborrow-hints nil)
   :config
-  (lsp-enable-which-key-integration t)
   (setq read-process-output-max (* 1024 1024))
   (add-hook 'lsp-mode-hook 'lsp-ui-mode))
 
@@ -543,17 +487,6 @@ frame if FRAME is nil, and to 1 if AMT is nil."
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; AutoComplete
 ;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; (use-package company
-;;   :after lsp-mode
-;;   :hook (lsp-mode . company-mode)
-;;   :bind (:map company-active-map
-;;          ("<tab>" . company-complete-selection))
-;;         (:map lsp-mode-map
-;;          ("<tab>" . company-indent-or-complete-common))
-;;   :custom
-;;   (company-minimum-prefix-length 1)
-;;   (company-idle-delay 0.0))
 
 (use-package yasnippet
   :ensure
@@ -655,12 +588,12 @@ frame if FRAME is nil, and to 1 if AMT is nil."
               ("C-c C-c d" . dap-hydra)
               ("C-c C-c h" . lsp-ui-doc-glance))
   :config
-  ;; uncomment for less flashiness
-  ;; (setq lsp-eldoc-hook nil)
-  ;; (setq lsp-enable-symbol-highlighting nil)
-  ;; (setq lsp-signature-auto-activate nil)
+  ;; less flashiness
+  (setq lsp-eldoc-hook nil)
+  (setq lsp-enable-symbol-highlighting nil)
+  (setq lsp-signature-auto-activate nil)
 
-  ;; comment to disable rustfmt on save
+  ;;  rustfmt on save
   (add-hook 'rustic-mode-hook 'rs/rustic-mode-hook))
 
 (defun rs/rustic-mode-hook ()
@@ -671,3 +604,188 @@ frame if FRAME is nil, and to 1 if AMT is nil."
   (when buffer-file-name
     (setq-local buffer-save-without-query t))
   (add-hook 'before-save-hook 'lsp-format-buffer nil t))
+
+;;;;;;;;;;;;;;;;;;;;;;;;
+;; Org
+;;;;;;;;;;;;;;;;;;;;;;;;
+
+(straight-use-package '(org :files (:defaults "lisp/*")
+                                :excludes ()))
+
+(use-package org
+  :ensure org-plus-contrib
+  :mode ("\\.org\\'" . org-mode)
+  :bind (("C-c l" . org-store-link)
+         ("C-c c" . org-capture)
+         ("C-c a" . org-agenda)
+         ("C-c b" . org-iswitchb)
+         ("C-c C-w" . org-refile)
+         ("C-c j" . org-clock-goto)
+         ("C-c C-x C-o" . org-clock-out))
+  :config
+  (progn
+    ;; The GTD part of this config is heavily inspired by
+    ;; https://emacs.cafe/emacs/orgmode/gtd/2017/06/30/orgmode-gtd.html
+    (setq org-directory "~/Notes")
+    (setq org-agenda-files
+          (mapcar (lambda (path) (concat org-directory path))
+                  '("/inbox.org"
+                    "/gtd/gtd.org"
+                    "/gtd/inbox.org"
+                    "/gtd/tickler.org")))
+
+    (setq org-log-done 'time)
+    (setq org-src-fontify-natively t)
+    (setq org-use-speed-commands t)
+    (setq org-capture-templates
+          '(("t" "Todo [inbox]" entry
+             (file+headline "~/org/gtd/inbox.org" "Tasks")
+             "* TODO %i%?")
+            ("T" "Tickler" entry
+             (file+headline "~/org/gtd/tickler.org" "Tickler")
+             "* %i%? \n %^t")))
+    (setq org-refile-targets
+          '(("~/org/gtd/gtd.org" :maxlevel . 3)
+            ("~/org/gtd/someday.org" :level . 1)
+            ("~/org/gtd/tickler.org" :maxlevel . 2)))
+    (setq org-todo-keywords '((sequence "TODO(t)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)")))
+    (setq org-agenda-custom-commands
+          '(("@" "Contexts"
+             ((tags-todo "@email"
+                         ((org-agenda-overriding-header "Emails")))
+              (tags-todo "@phone"
+                         ((org-agenda-overriding-header "Phone")))))))
+    (setq org-clock-persist t)
+    (org-clock-persistence-insinuate)
+    (setq org-time-clocksum-format '(:hours "%d" :require-hours t :minutes ":%02d" :require-minutes t))))
+
+(use-package org-inlinetask
+  :ensure nil
+  :straight (:type built-in)
+  :after org
+  :bind (:map org-mode-map
+              ("C-c C-x t" . org-inlinetask-insert-task))
+  :after (org)
+  :commands (org-inlinetask-insert-task))
+
+(use-package org-bullets
+  :after org
+  :commands (org-bullets-mode)
+  :hook (org-mode . org-bullets-mode)
+  ;; :init (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1)))
+  :custom
+  ( org-bullets-bullet-list
+  '(;;; Large
+    ;; "◉"
+    ;; "○"
+    ;; "✸"
+    ;; "✿"
+    ;; ♥ ● ◇ ✚ ✜ ☯ ◆ ♠ ♣ ♦ ☢ ❀ ◆ ◖ ▶
+    ;;; Small
+    "►"
+    "•"
+    "★"
+    "▸"
+    )))
+  
+;;;;;;;;;;;;;;;;;;;;;;;;
+;; Utils
+;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Copilot
+(use-package copilot
+  :straight (:host github :repo "zerolfx/copilot.el" :files ("dist" "*.el"))
+  :hook (prog-mode . copilot-mode)
+  ;; :bind (:map copilot-compilation-map
+  ;; 	      ("<tab>" . copilot-accept-completion)
+  ;; 	      ("TAB" . copilot-accept-completion))
+  :config
+  (define-key copilot-completion-map (kbd "<tab>") 'copilot-accept-completion)
+  (define-key copilot-completion-map (kbd "TAB") 'copilot-accept-completion))
+
+;; flymake
+(use-package flycheck
+  :demand t)
+
+;; Move text
+(use-package move-text
+  :bind (("M-p" . move-text-up)
+	 ("M-n" . move-text-down)))
+
+;; Compilation Mode
+;; https://github.com/rexim/dotfiles/blob/25f8ddc6717e56f110e812fd0cec2f1a1dc9d8be/.emacs#L10
+compilation-error-regexp-alist-alist
+(add-to-list 'compilation-error-regexp-alist
+             '("\\([a-zA-Z0-9\\.]+\\)(\\([0-9]+\\)\\(,\\([0-9]+\\)\\)?) \\(Warning:\\)?"
+               1 2 (4) (5)))
+
+;; Zoom In/Out
+;; https://stackoverflow.com/a/60641769
+;; Resize the whole frame, and not only a window
+;; Adapted from https://stackoverflow.com/a/24714383/5103881
+
+(defun rs/zoom-frame (&optional amt frame)
+  "Increaze FRAME font size by amount AMT. Defaults to selected
+frame if FRAME is nil, and to 1 if AMT is nil."
+  (interactive "p")
+  (let* ((frame (or frame (selected-frame)))
+         (font (face-attribute 'default :font frame))
+         (size (font-get font :size))
+         (amt (or amt 1))
+         (new-size (+ size amt)))
+    (set-frame-font (font-spec :size new-size) t `(,frame))
+    (message "Frame's font new size: %d" new-size)))
+
+(defun rs/zoom-frame-out (&optional amt frame)
+  "Call `rs/zoom-frame' with negative argument."
+  (interactive "p")
+  (rs/zoom-frame (- (or amt 1)) frame))
+
+(global-set-key (kbd "C-=") 'rs/zoom-frame)
+(global-set-key (kbd "C--") 'rs/zoom-frame-out)
+(global-set-key (kbd "<C-down-mouse-4>") 'rs/zoom-frame)
+(global-set-key (kbd "<C-down-mouse-5>") 'rs/zoom-frame-out)
+
+;; Highlight
+(use-package hl-line
+  :ensure nil
+  :config
+  (global-hl-line-mode))
+
+;; Multiple Cursors
+(use-package multiple-cursors
+  :defer t)
+(global-set-key (kbd "C-S-c C-S-c") 'mc/edit-lines)
+(global-set-key (kbd "C-M-SPC")     'set-rectangular-region-anchor)
+(global-set-key (kbd "C->")         'mc/mark-next-like-this)
+(global-set-key (kbd "C-<")         'mc/mark-previous-like-this)
+(global-set-key (kbd "C-c C-<")     'mc/mark-all-like-this)
+(global-set-key (kbd "C-\"")        'mc/skip-to-next-like-this)
+(global-set-key (kbd "C-:")         'mc/skip-to-previous-like-this)
+
+;; Which Key
+(use-package which-key
+  :config
+  (which-key-mode)
+  (lsp-enable-which-key-integration t))
+
+;; Trailing Whitespace
+(use-package ws-butler
+  :hook (prog-mode-hook . ws-butler-mode))
+
+;; Smartparents
+(use-package smartparens
+  :diminish smartparens-mode
+  :config
+  (progn
+    (require 'smartparens-config)
+    (smartparens-global-mode 1)
+    (show-paren-mode t)))
+
+;; Crux
+(use-package crux
+  :bind
+  ("C-k" . crux-smart-kill-line)
+  ("C-c n" . crux-cleanup-buffer-or-region)
+  ("C-c f" . crux-recentf-find-file)
+  ("C-a" . crux-move-beginning-of-line))
