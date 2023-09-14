@@ -752,8 +752,8 @@ unreadable. Returns the names of envvars that were changed."
   ;;               ("<tab>" . copilot-accept-completion)
   ;;               ("TAB" . copilot-accept-completion))
   :config
-  (define-key copilot-completion-map (kbd "<tab>") 'copilot-accept-completion)
-  (define-key copilot-completion-map (kbd "TAB") 'copilot-accept-completion))
+  (define-key copilot-completion-map (kbd "M-<tab>") 'copilot-accept-completion)
+  (define-key copilot-completion-map (kbd "M-TAB") 'copilot-accept-completion))
 
 ;; flymake
 (use-package flycheck
@@ -844,3 +844,6 @@ frame if FRAME is nil, and to 1 if AMT is nil."
 ;; Rainbow
 (use-package rainbow-mode
   :hook (prog-mode text-mode))
+
+(use-package rainbow-delimiters
+  :hook (prog-mode . rainbow-delimiters-mode))
