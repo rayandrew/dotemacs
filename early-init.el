@@ -25,6 +25,7 @@
 (setq custom-file (make-temp-file "custom-" nil ".el"))
 
 ;; Faster to disable these here (before they've been initialized)
+(push '(undecorated . t) default-frame-alist)
 (push '(menu-bar-lines . 0) default-frame-alist)
 (push '(tool-bar-lines . 0) default-frame-alist)
 (push '(vertical-scroll-bars) default-frame-alist)

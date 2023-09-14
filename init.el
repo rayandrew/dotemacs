@@ -21,11 +21,17 @@
 (defconst rs/local-dir (concat rs/emacs-dir ".local/"))
 (defconst rs/env-file (concat rs/local-dir "env"))
 (defconst rs/help-key "C-?")
+
 (defun rs/get-default-font ()
   (cond
    ((eq system-type 'windows-nt) "Consolas-13")
    ((eq system-type 'gnu/linux) "Iosevka-20")
    ((eq system-type 'darwin) "Iosevka Nerd Font Mono-20")))
+(add-to-list 'default-frame-alist `(font . ,(rs/get-default-font)))
+;; (set-face-attribute 'default nil :family "UbuntuMono Nerd Font Mono" :height 160)
+;; (set-face-attribute 'default nil :family "Iosevka Nerd Font Mono" :height 180)
+;; (set-face-attribute 'default nil :family "Iosevka Comfy Wide" :height 180)
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Straight
@@ -100,53 +106,13 @@
 ;; Theme
 ;;;;;;;;;;;;;;;;;;;;;;;;
 
-(add-to-list 'default-frame-alist `(font . ,(rs/get-default-font)))
-
-;; (set-face-attribute 'default nil :family "UbuntuMono Nerd Font Mono" :height 160)
-;; (set-face-attribute 'default nil :family "Iosevka Nerd Font Mono" :height 180)
-;; (set-face-attribute 'default nil :family "Iosevka Comfy Wide" :height 180) 
-
 (use-package gruber-darker-theme
   :config
   (load-theme 'gruber-darker t))
 
-;; (use-package alect-themes
-;;   :config
-;;   (load-theme 'alect-black t))
-
-;; (use-package ample-theme
-;;   ;; :init (progn (load-theme 'ample t t)
-;;   ;;              (load-theme 'ample-flat t t)
-;;   ;;              (load-theme 'ample-light t t)
-;;   ;;              (enable-theme 'ample))
-;;   ;; :defer t
-;;   :init
-;;   (load-theme 'ample-flat t))
-
-;; (use-package modus-themes
-;;   :config
-;;   (load-theme 'modus-vivendi t))
-;;   (load-theme 'modus-vivendi-tinted t)
-;;   (load-theme 'modus-vivendi-deuteranopia t)
-;;   (load-theme 'modus-vivendi-tritanopia t))
-
-;; (use-package doom-themes
-;;   :ensure t
-;;   :config
-;;   (setq doom-themes-enable-bold t
-;;         doom-themes-enable-italic t)
-;;   (load-theme 'doom-sourcerer t)
-;;   ;; (load-theme 'doom-one t)
-;;   (doom-themes-visual-bell-config)
-;;   (doom-themes-neotree-config)
-;;   (setq doom-themes-treemacs-theme "doom-atom")
-;;   (doom-themes-org-config)
-;;   (doom-themes-treemacs-config))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Basic
 ;;;;;;;;;;;;;;;;;;;;;;;;
-
 
 ;; Scrolling
 ;; https://pragmaticemacs.wordpress.com/2015/07/14/scrolling-and-moving-by-line/
@@ -231,7 +197,7 @@
 (use-package orderless
   :demand t
   :init
-  (setq completion-styles '(orderless basic)
+  (setq completion-styles '(orderless partial-completion basic)
 	completion-category-defaults nil
 	completion-category-overrides '((file (styles basic partial-completion)))))
 
@@ -267,21 +233,20 @@
 	 ("C-x C-/" . consult-grep)))
 
 (global-set-key (kbd "C-x C-p") 'project-find-file)
-;; (global-set-key (kbd "C-x C-/") ')
 
-;; Affe
-;; (use-package affe
-;;   :bind (("C-x C-p" . affe-find)
-;;	 ("C-x C-/" . affe-grep))
-;;   :config
-;;   (consult-customize affe-grep :preview-key "M-."))
-
+;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Marginalia
+;;;;;;;;;;;;;;;;;;;;;;;;
+
 (use-package marginalia
   :bind (:map minibuffer-local-map
 	      ("M-A" . marginalia-cycle))
   :init
   (marginalia-mode))
+
+;;;;;;;;;;;;;;;;;;;;;;;;
+;; Embark
+;;;;;;;;;;;;;;;;;;;;;;;;
 
 (use-package embark
   :ensure t
@@ -386,8 +351,8 @@ unreadable. Returns the names of envvars that were changed."
 ;; Windowing
 ;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; (use-package ace-window
-;;   :bind (("C-x o" . ace-window)))
+(use-package ace-window
+  :bind (("C-x C-o" . ace-window)))
 
 (use-package windmove
   :bind (("C-l" . windmove-right)
@@ -396,17 +361,6 @@ unreadable. Returns the names of envvars that were changed."
 	 ("C-k" . windmove-up))
   :config
   (setq windmove-wrap-around nil))
-
-;; (use-package hydra
-;;   :demand t
-;;   :bind (("C-x" . hydra-other-window/body))
-;;   :init
-;;   (defhydra hydra-other-window
-;;     (global-map "C-x"
-;;              :color red)
-;;     "other window"
-;;     ("<right>" other-window "→")
-;;     ("<left>" (lambda () (interactive) (other-window -1)) "←")))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Dired
@@ -454,8 +408,7 @@ unreadable. Returns the names of envvars that were changed."
 ;; Terminal
 ;;;;;;;;;;;;;;;;;;;;;;;;
 
-(use-package vterm
-  :ensure t)
+(use-package vterm)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Tramp
@@ -471,17 +424,6 @@ unreadable. Returns the names of envvars that were changed."
 (setq password-cache-expiry nil)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
-;; Tree Sitter
-;;;;;;;;;;;;;;;;;;;;;;;;
-
-(use-package tree-sitter)
-(use-package tree-sitter-langs
-  :after tree-sitter)
-
-(global-tree-sitter-mode)
-(add-hook 'tree-sitter-after-on-hook #'tree-sitter-hl-mode)
-
-;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Git
 ;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -495,32 +437,36 @@ unreadable. Returns the names of envvars that were changed."
 (straight-use-package '(lsp-mode :files (:defaults "clients/*")
 				 :includes (lsp-nix)))
 
-(defun rs/lsp-mode-setup ()
-  (setq lsp-headerline-breadcrumb-segments '(path-up-to-project file symbols))
-  (lsp-headerline-breadcrumb-mode))
-
-(use-package lsp-mode
+(use-package lsp-mode  
   :commands (lsp lsp-deferred)
-  :hook ((lsp-mode . rs/lsp-mode-setup))
-  :init
-  (setq lsp-keymap-prefix "C-c l")
   :custom
-  ;; what to use when checking on-save. "check" is default, I prefer clippy
-  (lsp-rust-analyzer-cargo-watch-command "clippy")
+  (lsp-completion-provider :none) ;; using corfu
   (lsp-eldoc-render-all t)
   (lsp-idle-delay 0.6)
-  ;; enable / disable the hints as you prefer:
-  (lsp-inlay-hint-enable t)
-  ;; These are optional configurations. See https://emacs-lsp.github.io/lsp-mode/page/lsp-rust-analyzer/#lsp-rust-analyzer-display-chaining-hints for a full list
+  (lsp-inlay-hint-enable nil) ;; disable inlay hint
+
+  ;; Rust
+  (lsp-rust-analyzer-cargo-watch-command "clippy")
   (lsp-rust-analyzer-display-lifetime-elision-hints-enable "skip_trivial")
   (lsp-rust-analyzer-display-chaining-hints t)
   (lsp-rust-analyzer-display-lifetime-elision-hints-use-parameter-names nil)
   (lsp-rust-analyzer-display-closure-return-type-hints t)
   (lsp-rust-analyzer-display-parameter-hints nil)
   (lsp-rust-analyzer-display-reborrow-hints nil)
+  :init
+  (setq lsp-keymap-prefix "C-c l")
+  (defun rs/lsp-mode-setup-completion ()
+    (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
+          '(flex))) ;; Configure flex  
+  (defun rs/lsp-mode-setup ()
+    (setq lsp-headerline-breadcrumb-segments '(path-up-to-project file symbols))
+    (lsp-headerline-breadcrumb-mode))
+  :hook ((lsp-mode . rs/lsp-mode-setup)
+	 (lsp-mode . lsp-enable-which-key-integration)
+	 (lsp-mode . lsp-ui-mode)  
+	 (lsp-completion-mode . rs/lsp-mode-setup-completion))
   :config
-  (setq read-process-output-max (* 1024 1024))
-  (add-hook 'lsp-mode-hook 'lsp-ui-mode))
+  (setq read-process-output-max (* 1024 1024)))
 
 (use-package lsp-ui
   :commands lsp-ui-mode
@@ -540,56 +486,45 @@ unreadable. Returns the names of envvars that were changed."
   (add-hook 'prog-mode-hook 'yas-minor-mode)
   (add-hook 'text-mode-hook 'yas-minor-mode))
 
-(use-package company
-  ;; :after lsp-mode
-  :hook (lsp-mode . company-mode)
-  :ensure
-  :bind
-  (:map company-active-map
-	("C-n". company-select-next)
-	("C-p". company-select-previous)
-	("M-<". company-select-first)
-	("M->". company-select-last))
-  (:map company-mode-map
-	("<tab>". tab-indent-or-complete)
-	("TAB". tab-indent-or-complete))
+(use-package corfu
+  ;; Optional customizations
   :custom
-  (company-minimum-prefix-length 1)
-  (company-idle-delay 0.0))
+  (corfu-cycle t)                ;; Enable cycling for `corfu-next/previous'
+  (corfu-auto t)                 ;; Enable auto completion
+  ;; (corfu-separator ?\s)          ;; Orderless field separator
+  ;; (corfu-quit-at-boundary nil)   ;; Never quit at completion boundary
+  ;; (corfu-quit-no-match nil)      ;; Never quit, even if there is no match
+  ;; (corfu-preview-current nil)    ;; Disable current candidate preview
+  ;; (corfu-preselect 'prompt)      ;; Preselect the prompt
+  ;; (corfu-on-exact-match nil)     ;; Configure handling of exact matches
+  ;; (corfu-scroll-margin 5)        ;; Use scroll margin
 
-(defun company-yasnippet-or-completion ()
-  (interactive)
-  (or (do-yas-expand)
-      (company-complete-common)))
+  ;; Enable Corfu only for certain modes.
+  ;; :hook ((prog-mode . corfu-mode)
+  ;;        (shell-mode . corfu-mode)
+  ;;        (eshell-mode . corfu-mode))
 
-(defun check-expansion ()
-  (save-excursion
-    (if (looking-at "\\_>") t
-      (backward-char 1)
-      (if (looking-at "\\.") t
-	(backward-char 1)
-	(if (looking-at "::") t nil)))))
+  ;; Recommended: Enable Corfu globally.
+  ;; This is recommended since Dabbrev can be used globally (M-/).
+  ;; See also `global-corfu-modes'.
+  :init
+  (global-corfu-mode))
 
-(defun do-yas-expand ()
-  (let ((yas/fallback-behavior 'return-nil))
-    (yas/expand)))
+(use-package emacs
+  :init
+  ;; TAB cycle if there are only few candidates
+  (setq completion-cycle-threshold 3)
+  ;; Enable indentation+completion using the TAB key.
+  ;; `completion-at-point' is often bound to M-TAB.
+  (setq tab-always-indent 'complete))
 
-(defun tab-indent-or-complete ()
-  (interactive)
-  (if (minibufferp)
-      (minibuffer-complete)
-    (if (or (not yas/minor-mode)
-	    (null (do-yas-expand)))
-	(if (check-expansion)
-	    (company-complete-common)
-	  (indent-for-tab-command)))))
-
-(use-package company-box
-  :after company
-  :hook (company-mode . company-box-mode))
-
-;; Consult LSP
-(use-package consult-lsp)
+(use-package dabbrev
+  ;; Swap M-/ and C-M-/
+  :bind (("M-/" . dabbrev-completion)
+         ("C-M-/" . dabbrev-expand))
+  ;; Other useful Dabbrev configurations.
+  :custom
+  (dabbrev-ignored-buffer-regexps '("\\.\\(?:pdf\\|jpe?g\\|png\\)\\'")))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Programming Language
@@ -609,7 +544,6 @@ unreadable. Returns the names of envvars that were changed."
 (use-package lsp-nix
   :ensure lsp-mode
   :after (lsp-mode)
-  :demand t
   :custom
   (lsp-nix-nil-formatter ["nixpkgs-fmt"]))
 
@@ -919,8 +853,7 @@ frame if FRAME is nil, and to 1 if AMT is nil."
 ;; Which Key
 (use-package which-key
   :config
-  (which-key-mode)
-  (lsp-enable-which-key-integration t))
+  (which-key-mode))
 
 ;; Trailing Whitespace
 (use-package ws-butler
