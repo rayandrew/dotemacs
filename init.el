@@ -1,7 +1,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Welkommen
 ;;;;;;;;;;;;;;;;;;;;;;;;
-;; 
+;;
 ;; R/S Config
 ;; rs@rs.ht
 ;;
@@ -21,6 +21,11 @@
 (defconst rs/local-dir (concat rs/emacs-dir ".local/"))
 (defconst rs/env-file (concat rs/local-dir "env"))
 (defconst rs/help-key "C-?")
+(defun rs/get-default-font ()
+  (cond
+   ((eq system-type 'windows-nt) "Consolas-13")
+   ((eq system-type 'gnu/linux) "Iosevka-20")
+   ((eq system-type 'darwin) "Iosevka Nerd Font Mono-20")))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Straight
@@ -33,9 +38,9 @@
       (bootstrap-version 6))
   (unless (file-exists-p bootstrap-file)
     (with-current-buffer
-        (url-retrieve-synchronously
-         "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
-         'silent 'inhibit-cookies)
+	(url-retrieve-synchronously
+	 "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
+	 'silent 'inhibit-cookies)
       (goto-char (point-max))
       (eval-print-last-sexp)))
   (load bootstrap-file nil 'nomessage))
@@ -47,10 +52,10 @@
 (setq initial-major-mode 'fundamental-mode)
 (setq read-process-output-max (* 1024 1024))
 (setq backup-directory-alist '(("." . "~/.config.d/emacs/backup"))
-      backup-by-copying t    
-      version-control t      
-      delete-old-versions t  
-      kept-new-versions 20   
+      backup-by-copying t
+      version-control t
+      delete-old-versions t
+      kept-new-versions 20
       kept-old-versions 5)
 (defalias 'yes-or-no-p 'y-or-n-p)
 
@@ -64,10 +69,6 @@
 (global-set-key (kbd rs/help-key) 'help-command)
 
 (add-hook 'prog-mode-hook 'display-line-numbers-mode)
-
-;; Compilation mode
-;; (setq compilation-scroll-output t) ;; enable this if you want to follow scrolling
-(setq compilation-scroll-output 'first-error)
 
 ;; Shell mode
 ;; (setq shell-file-name "zsh")
@@ -99,23 +100,67 @@
 ;; Theme
 ;;;;;;;;;;;;;;;;;;;;;;;;
 
-(set-face-attribute 'default nil :family "UbuntuMono Nerd Font Mono" :height 160)
+(add-to-list 'default-frame-alist `(font . ,(rs/get-default-font)))
 
-;; (use-package gruber-darker-theme
-;;   :config
-;;   (load-theme 'gruber-darker t))
+;; (set-face-attribute 'default nil :family "UbuntuMono Nerd Font Mono" :height 160)
+;; (set-face-attribute 'default nil :family "Iosevka Nerd Font Mono" :height 180)
+;; (set-face-attribute 'default nil :family "Iosevka Comfy Wide" :height 180) 
 
-(use-package doom-themes
-  :ensure t
+(use-package gruber-darker-theme
   :config
-  (setq doom-themes-enable-bold t    
-        doom-themes-enable-italic t)
-  (load-theme 'doom-sourcerer t)
-  (doom-themes-visual-bell-config)
-  (doom-themes-neotree-config)
-  (setq doom-themes-treemacs-theme "doom-atom")
-  (doom-themes-org-config)	       
-  (doom-themes-treemacs-config))
+  (load-theme 'gruber-darker t))
+
+;; (use-package alect-themes
+;;   :config
+;;   (load-theme 'alect-black t))
+
+;; (use-package ample-theme
+;;   ;; :init (progn (load-theme 'ample t t)
+;;   ;;              (load-theme 'ample-flat t t)
+;;   ;;              (load-theme 'ample-light t t)
+;;   ;;              (enable-theme 'ample))
+;;   ;; :defer t
+;;   :init
+;;   (load-theme 'ample-flat t))
+
+;; (use-package modus-themes
+;;   :config
+;;   (load-theme 'modus-vivendi t))
+;;   (load-theme 'modus-vivendi-tinted t)
+;;   (load-theme 'modus-vivendi-deuteranopia t)
+;;   (load-theme 'modus-vivendi-tritanopia t))
+
+;; (use-package doom-themes
+;;   :ensure t
+;;   :config
+;;   (setq doom-themes-enable-bold t
+;;         doom-themes-enable-italic t)
+;;   (load-theme 'doom-sourcerer t)
+;;   ;; (load-theme 'doom-one t)
+;;   (doom-themes-visual-bell-config)
+;;   (doom-themes-neotree-config)
+;;   (setq doom-themes-treemacs-theme "doom-atom")
+;;   (doom-themes-org-config)
+;;   (doom-themes-treemacs-config))
+
+;;;;;;;;;;;;;;;;;;;;;;;;
+;; Basic
+;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+;; Scrolling
+;; https://pragmaticemacs.wordpress.com/2015/07/14/scrolling-and-moving-by-line/
+(setq scroll-preserve-screen-position 1)
+;;scroll window up/down by one line
+(global-set-key (kbd "M-<up>") (kbd "C-u 1 M-v"))
+(global-set-key (kbd "M-<down>") (kbd "C-u 1 C-v"))
+
+;; Compilation Mode
+;; (setq compilation-scroll-output t) ;; enable this if you want to follow scrolling
+(setq compilation-scroll-output 'first-error)
+
+(global-set-key (kbd "C-c C-c") 'compile)
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Vertico
@@ -123,27 +168,22 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;
 
 (straight-use-package '(vertico :files (:defaults "extensions/*")
-                                :includes (vertico-buffer
-                                           vertico-directory
-                                           vertico-flat
+				:includes (vertico-buffer
+					   vertico-directory
+					   vertico-flat
 					   vertico-grid
-                                           vertico-indexed
-                                           vertico-mouse
-                                           vertico-quick
-                                           vertico-repeat
-                                           vertico-reverse
+					   vertico-indexed
+					   vertico-mouse
+					   vertico-quick
+					   vertico-repeat
+					   vertico-reverse
 					   vertico-multiform)))
 
 (use-package vertico
   :ensure t
   :init
   ;; Enable completion by narrowing
-  (vertico-mode t)
-  ;; Improve directory navigation
-  (with-eval-after-load 'vertico
-    (define-key vertico-map (kbd "RET") #'vertico-directory-enter)
-    (define-key vertico-map (kbd "DEL") #'vertico-directory-delete-word)
-    (define-key vertico-map (kbd "M-d") #'vertico-directory-delete-char)))
+  (vertico-mode t))
 
 (use-package vertico-indexed
   :after vertico
@@ -183,17 +223,17 @@
   :after vertico
   :ensure nil
   :bind (:map vertico-map
-              ("RET" . vertico-directory-enter)
-              ("DEL" . vertico-directory-delete-char)
-              ("M-DEL" . vertico-directory-delete-word))
+	      ("RET" . vertico-directory-enter)
+	      ("DEL" . vertico-directory-delete-char)
+	      ("M-DEL" . vertico-directory-delete-word))
   :hook (rfn-eshadow-update-overlay . vertico-directory-tidy))
 
 (use-package orderless
   :demand t
   :init
   (setq completion-styles '(orderless basic)
-        completion-category-defaults nil
-        completion-category-overrides '((file (styles basic partial-completion)))))
+	completion-category-defaults nil
+	completion-category-overrides '((file (styles basic partial-completion)))))
 
 (use-package savehist
   :init
@@ -203,15 +243,15 @@
   :init
   (defun crm-indicator (args)
     (cons (format "[CRM%s] %s"
-                  (replace-regexp-in-string
-                   "\\`\\[.*?]\\*\\|\\[.*?]\\*\\'" ""
-                   crm-separator)
-                  (car args))
-          (cdr args)))
+		  (replace-regexp-in-string
+		   "\\`\\[.*?]\\*\\|\\[.*?]\\*\\'" ""
+		   crm-separator)
+		  (car args))
+	  (cdr args)))
   (advice-add #'completing-read-multiple :filter-args #'crm-indicator)
 
   (setq minibuffer-prompt-properties
-        '(read-only t cursor-intangible t face minibuffer-prompt))
+	'(read-only t cursor-intangible t face minibuffer-prompt))
   (add-hook 'minibuffer-setup-hook #'cursor-intangible-mode)
   (setq enable-recursive-minibuffers t))
 
@@ -223,26 +263,30 @@
   :bind (("C-x b" . consult-buffer)
 	 ("C-x r" . consult-recent-file)
 	 ("C-:" . consult-goto-line)
-	 ("C-s" . consult-line)))
+	 ("C-x /" . consult-line)
+	 ("C-x C-/" . consult-grep)))
+
+(global-set-key (kbd "C-x C-p") 'project-find-file)
+;; (global-set-key (kbd "C-x C-/") ')
 
 ;; Affe
-(use-package affe
-  :bind (("C-x C-p" . affe-find)
-	 ("C-x C-/" . affe-grep))
-  :config
-  (consult-customize affe-grep :preview-key "M-."))
+;; (use-package affe
+;;   :bind (("C-x C-p" . affe-find)
+;;	 ("C-x C-/" . affe-grep))
+;;   :config
+;;   (consult-customize affe-grep :preview-key "M-."))
 
 ;; Marginalia
 (use-package marginalia
   :bind (:map minibuffer-local-map
-              ("M-A" . marginalia-cycle))
+	      ("M-A" . marginalia-cycle))
   :init
   (marginalia-mode))
 
 (use-package embark
   :ensure t
   :bind (("C-." . embark-act)
-	 ("C-;" . embark-dwim)        
+	 ("C-;" . embark-dwim)
 	 ("C-<return>" . embark-bindings))
   :init
   (setq embark-help-key rs/help-key)
@@ -250,9 +294,9 @@
   (add-hook 'eldoc-documentation-functions #'embark-eldoc-first-target)
   :config
   (add-to-list 'display-buffer-alist
-               '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
-                 nil
-                 (window-parameters (mode-line-format . none)))))
+	       '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
+		 nil
+		 (window-parameters (mode-line-format . none)))))
 
 (use-package embark-consult
   :ensure t
@@ -304,46 +348,46 @@ If NOERROR is non-nil, don't throw an error if the file doesn't exist or is
 unreadable. Returns the names of envvars that were changed."
   (if (not (file-readable-p file))
       (unless noerror
-        (signal 'file-error (list "Couldn't read envvar file" file)))
+	(signal 'file-error (list "Couldn't read envvar file" file)))
     (let (envvars environment)
       (with-temp-buffer
-        (save-excursion
-          (insert "\n")
-          (insert-file-contents file))
-        (while (re-search-forward "\n *\\([^#= \n]*\\)=" nil t)
-          (push (match-string 1) envvars)
-          (push (buffer-substring
-                 (match-beginning 1)
-                 (1- (or (save-excursion
-                           (when (re-search-forward "^\\([^= ]+\\)=" nil t)
-                             (line-beginning-position)))
-                         (point-max))))
-                environment)))
+	(save-excursion
+	  (insert "\n")
+	  (insert-file-contents file))
+	(while (re-search-forward "\n *\\([^#= \n]*\\)=" nil t)
+	  (push (match-string 1) envvars)
+	  (push (buffer-substring
+		 (match-beginning 1)
+		 (1- (or (save-excursion
+			   (when (re-search-forward "^\\([^= ]+\\)=" nil t)
+			     (line-beginning-position)))
+			 (point-max))))
+		environment)))
       (when environment
-        (setq process-environment
-              (append (nreverse environment) process-environment)
-              exec-path
-              (if (member "PATH" envvars)
-                  (append (split-string (getenv "PATH") path-separator t)
-                          (list exec-directory))
-                exec-path)
-              shell-file-name
-              (if (member "SHELL" envvars)
-                  (or (getenv "SHELL") shell-file-name)
-                shell-file-name))
-        envvars))))
+	(setq process-environment
+	      (append (nreverse environment) process-environment)
+	      exec-path
+	      (if (member "PATH" envvars)
+		  (append (split-string (getenv "PATH") path-separator t)
+			  (list exec-directory))
+		exec-path)
+	      shell-file-name
+	      (if (member "SHELL" envvars)
+		  (or (getenv "SHELL") shell-file-name)
+		shell-file-name))
+	envvars))))
 
 (when (and (or (display-graphic-p)
-               (daemonp))
-           (file-exists-p rs/env-file))
+	       (daemonp))
+	   (file-exists-p rs/env-file))
   (rs/load-envvars-file rs/env-file))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Windowing
 ;;;;;;;;;;;;;;;;;;;;;;;;
 
-(use-package ace-window
-  :bind (("C-x o" . ace-window)))
+;; (use-package ace-window
+;;   :bind (("C-x o" . ace-window)))
 
 (use-package windmove
   :bind (("C-l" . windmove-right)
@@ -359,7 +403,7 @@ unreadable. Returns the names of envvars that were changed."
 ;;   :init
 ;;   (defhydra hydra-other-window
 ;;     (global-map "C-x"
-;; 		:color red)
+;;              :color red)
 ;;     "other window"
 ;;     ("<right>" other-window "→")
 ;;     ("<left>" (lambda () (interactive) (other-window -1)) "←")))
@@ -375,22 +419,13 @@ unreadable. Returns the names of envvars that were changed."
   (dired-dwim-target t)
   (dired-listing-switches "-alh"))
 
-
-;; https://emacs.stackexchange.com/a/36851
-(defun rs/dired-copy-path-at-point ()
-  (interactive)
-  (dired-copy-filename-as-kill 0))
-
-(define-key dired-mode-map (kbd "W") 'rs/dired-copy-path-at-point)
-(define-key dired-mode-map (kbd "-") 'dired-up-directory)
-
 (use-package dired-x
   :after dired
   :ensure nil
   :straight nil
   :config
   (setq dired-omit-files
-      (concat dired-omit-files "\\|^\\..+$")))
+	(concat dired-omit-files "\\|^\\..+$")))
 
 (use-package dired-subtree
   :after dired
@@ -407,6 +442,14 @@ unreadable. Returns the names of envvars that were changed."
   :init
   (setq diredp-hide-details-initially-flag nil))
 
+;; https://emacs.stackexchange.com/a/36851
+(defun rs/dired-copy-path-at-point ()
+  (interactive)
+  (dired-copy-filename-as-kill 0))
+
+(define-key dired-mode-map (kbd "W") 'rs/dired-copy-path-at-point)
+(define-key dired-mode-map (kbd "-") 'dired-up-directory)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Terminal
 ;;;;;;;;;;;;;;;;;;;;;;;;
@@ -421,6 +464,8 @@ unreadable. Returns the names of envvars that were changed."
 ;; Fixing tramp cannot get all the path defined in `profile` config
 ;; https://stackoverflow.com/a/61169654
 (add-to-list 'tramp-remote-path 'tramp-own-remote-path)
+
+(setq-default tramp-shell-prompt-pattern "\\(?:^\\|\r\\)[^]#$%>\n]*#?[]#$%>].* *\\(^[\\[[0-9;]*[a-zA-Z] *\\)*")
 
 ;; Tramp SSH password
 (setq password-cache-expiry nil)
@@ -448,7 +493,7 @@ unreadable. Returns the names of envvars that were changed."
 ;;;;;;;;;;;;;;;;;;;;;;;;
 
 (straight-use-package '(lsp-mode :files (:defaults "clients/*")
-                                :includes (lsp-nix)))
+				 :includes (lsp-nix)))
 
 (defun rs/lsp-mode-setup ()
   (setq lsp-headerline-breadcrumb-segments '(path-up-to-project file symbols))
@@ -501,13 +546,13 @@ unreadable. Returns the names of envvars that were changed."
   :ensure
   :bind
   (:map company-active-map
-              ("C-n". company-select-next)
-              ("C-p". company-select-previous)
-              ("M-<". company-select-first)
-              ("M->". company-select-last))
+	("C-n". company-select-next)
+	("C-p". company-select-previous)
+	("M-<". company-select-first)
+	("M->". company-select-last))
   (:map company-mode-map
-        ("<tab>". tab-indent-or-complete)
-        ("TAB". tab-indent-or-complete))
+	("<tab>". tab-indent-or-complete)
+	("TAB". tab-indent-or-complete))
   :custom
   (company-minimum-prefix-length 1)
   (company-idle-delay 0.0))
@@ -522,8 +567,8 @@ unreadable. Returns the names of envvars that were changed."
     (if (looking-at "\\_>") t
       (backward-char 1)
       (if (looking-at "\\.") t
-        (backward-char 1)
-        (if (looking-at "::") t nil)))))
+	(backward-char 1)
+	(if (looking-at "::") t nil)))))
 
 (defun do-yas-expand ()
   (let ((yas/fallback-behavior 'return-nil))
@@ -534,10 +579,10 @@ unreadable. Returns the names of envvars that were changed."
   (if (minibufferp)
       (minibuffer-complete)
     (if (or (not yas/minor-mode)
-            (null (do-yas-expand)))
-        (if (check-expansion)
-            (company-complete-common)
-          (indent-for-tab-command)))))
+	    (null (do-yas-expand)))
+	(if (check-expansion)
+	    (company-complete-common)
+	  (indent-for-tab-command)))))
 
 (use-package company-box
   :after company
@@ -576,17 +621,17 @@ unreadable. Returns the names of envvars that were changed."
 (use-package rustic
   :ensure
   :bind (:map rustic-mode-map
-              ("M-j" . lsp-ui-imenu)
-              ("M-?" . lsp-find-references)
-              ("C-c C-c l" . flycheck-list-errors)
-              ("C-c C-c a" . lsp-execute-code-action)
-              ("C-c C-c r" . lsp-rename)
-              ("C-c C-c q" . lsp-workspace-restart)
-              ("C-c C-c Q" . lsp-workspace-shutdown)
-              ("C-c C-c s" . lsp-rust-analyzer-status)
-              ("C-c C-c e" . lsp-rust-analyzer-expand-macro)
-              ("C-c C-c d" . dap-hydra)
-              ("C-c C-c h" . lsp-ui-doc-glance))
+	      ("M-j" . lsp-ui-imenu)
+	      ("M-?" . lsp-find-references)
+	      ("C-c C-c l" . flycheck-list-errors)
+	      ("C-c C-c a" . lsp-execute-code-action)
+	      ("C-c C-c r" . lsp-rename)
+	      ("C-c C-c q" . lsp-workspace-restart)
+	      ("C-c C-c Q" . lsp-workspace-shutdown)
+	      ("C-c C-c s" . lsp-rust-analyzer-status)
+	      ("C-c C-c e" . lsp-rust-analyzer-expand-macro)
+	      ("C-c C-c d" . dap-hydra)
+	      ("C-c C-c h" . lsp-ui-doc-glance))
   :config
   ;; less flashiness
   (setq lsp-eldoc-hook nil)
@@ -605,56 +650,164 @@ unreadable. Returns the names of envvars that were changed."
     (setq-local buffer-save-without-query t))
   (add-hook 'before-save-hook 'lsp-format-buffer nil t))
 
+;; Python
+(use-package python-mode
+  :straight (:type built-in)
+  :mode ("\\.py\\'" . python-mode)
+  :bind (:map python-mode-map
+	      ("<S-tab>" . python-indent-dedent-line)
+	      ("DEL" . delete-backward-char)))
+
+;; Powershell
+(use-package powershell)
+
+;;;;;;;;;;;;;;;;;;;;;;;;
+;; RS Mode
+;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; https://emacs.stackexchange.com/questions/47276/emacs-custom-major-mode-with-multiple-comment-types
+
+(defvar rs-mode-hook nil)
+
+(defvar rs-mode-map
+  (let ((map (make-keymap)))
+    map))
+
+(defun xah-select-text-in-bracket ()
+  "Select text between the nearest brackets.
+➢ for example:  () [] {} «» ‹› “” 〖〗 【】 「」 『』 （） 〈〉 《》 〔〕 ⦗⦘ 〘〙 ⦅⦆ 〚〛 ⦃⦄ ⟨⟩."
+  (interactive)
+  (let (pos p1 p2 (parse-sexp-lookup-properties nil)
+	    (-temp-syn-table (make-syntax-table)))
+    (modify-syntax-entry ?\« "(»" -temp-syn-table)
+    (modify-syntax-entry ?\» ")«" -temp-syn-table)
+    (modify-syntax-entry ?\‹ "(›" -temp-syn-table)
+    (modify-syntax-entry ?\› ")‹" -temp-syn-table)
+    (modify-syntax-entry ?\“ "(”" -temp-syn-table)
+    (modify-syntax-entry ?\” ")“" -temp-syn-table)
+
+    (with-syntax-table -temp-syn-table
+      (setq pos (point))
+      (search-backward-regexp "\\s(" nil t )
+      (setq p1 (point))
+      (forward-sexp 1)
+      (setq p2 (point))
+      (goto-char (1+ p1))
+      (set-mark (1- p2)))))
+
+(defvar rs-mode-syntax-table
+  (with-syntax-table (copy-syntax-table)
+    ;; comment
+    (modify-syntax-entry ?\; ". 12b")
+    ;; (modify-syntax-entry ?! ".")
+    (modify-syntax-entry ?\n "> b")
+
+    ;; (modify-syntax-entry ?\/ ". 14")
+    ;; (modify-syntax-entry ?* ". 23")
+
+    (modify-syntax-entry ?\' ".")
+    (modify-syntax-entry ?\" "\"")
+
+    (modify-syntax-entry ?\[ "(^")
+    (modify-syntax-entry ?\] ")$")
+    (syntax-table))
+  "'rs-mode' syntax table ")
+
+;; (defvar rs-highlights
+;;   '(("!\\|" . font-lock-function-name-face)
+;;     ("!\\([^<]+?\\)" . (1 font-lock-function-name-face))))
+
+(defgroup rs nil
+  "Major mode for editing K code."
+  :prefix 'rs
+  :group 'languages)
+
+;; (defun rs-exclamation-propertize (begin end)
+;;   (save-excursion
+;;     (goto-char begin)
+;;     (while (< (point) end)
+;;       (unless (eolp)
+;;         (unless (eq (following-char) ?!)
+;;           (put-text-property (point) (+ (point) 1)
+;;                              'syntax-table (string-to-syntax "<"))))
+;;       (forward-line))))
+
+(defvar rs-font-lock-keywords
+  (list ;; '("^\\([ \t]+\\)?\\([A-Za-z09_]+\\)" 2 font-lock-keyword-face t)
+	;; '("!\\|" . font-lock-function-name-face)
+	;; '("!\\([^<]+?\\)\n" . (1 font-lock-function-name-face))
+	;; '("\\(^[^!\n].*$\\)" 0 font-lock-function-name-face)
+	;; '("\\(!.*\\)" 1 font-lock-function-name-face)
+	;; '("\\(!.*\\)" 0 font-lock-function-name-face)
+	'("^[\[[A-Za-z0-9_-]+\]" . font-lock-warning-face)
+	'("--\\(\[A-Za-z0-9_-]+\\)" . font-lock-type-face)
+	;; '("--\\(\[A-Za-z0-9_-]+\\)" . font-lock-type-face)
+	'("!.+" . font-lock-warning-face)
+	;; '(">.+" . font-lock-variable-name-face)
+	'(">.+" . font-lock-keyword-face)
+	'("#.+" . font-lock-string-face)
+	'("-.+" . font-lock-doc-face)
+	;; '("\\(\$[0-9]+\\)[^0-9]" 1 font-lock-constant-face)
+	'("\$[A-Za-z0-9_\-]+" . font-lock-variable-name-face)))
+
+(define-derived-mode rs-mode prog-mode "RS"
+  :syntax-table rs-mode-syntax-table
+  :group 'rs
+  ;; (setq-local syntax-propertize-function '(rs-ampersand-propertize))
+  (setq-local font-lock-defaults '(rs-font-lock-keywords))
+  (setq-local comment-start ";;")
+  (font-lock-fontify-buffer))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Org
 ;;;;;;;;;;;;;;;;;;;;;;;;
 
 (straight-use-package '(org :files (:defaults "lisp/*")
-                                :excludes ()))
+			    :excludes ()))
 
 (use-package org
   :ensure org-plus-contrib
   :mode ("\\.org\\'" . org-mode)
   :bind (("C-c l" . org-store-link)
-         ("C-c c" . org-capture)
-         ("C-c a" . org-agenda)
-         ("C-c b" . org-iswitchb)
-         ("C-c C-w" . org-refile)
-         ("C-c j" . org-clock-goto)
-         ("C-c C-x C-o" . org-clock-out))
+	 ("C-c c" . org-capture)
+	 ("C-c a" . org-agenda)
+	 ("C-c b" . org-iswitchb)
+	 ("C-c C-w" . org-refile)
+	 ("C-c j" . org-clock-goto)
+	 ("C-c C-x C-o" . org-clock-out))
   :config
   (progn
     ;; The GTD part of this config is heavily inspired by
     ;; https://emacs.cafe/emacs/orgmode/gtd/2017/06/30/orgmode-gtd.html
     (setq org-directory "~/Notes")
     (setq org-agenda-files
-          (mapcar (lambda (path) (concat org-directory path))
-                  '("/inbox.org"
-                    "/gtd/gtd.org"
-                    "/gtd/inbox.org"
-                    "/gtd/tickler.org")))
+	  (mapcar (lambda (path) (concat org-directory path))
+		  '("/inbox.org"
+		    "/gtd/gtd.org"
+		    "/gtd/inbox.org"
+		    "/gtd/tickler.org")))
 
     (setq org-log-done 'time)
     (setq org-src-fontify-natively t)
     (setq org-use-speed-commands t)
     (setq org-capture-templates
-          '(("t" "Todo [inbox]" entry
-             (file+headline "~/org/gtd/inbox.org" "Tasks")
-             "* TODO %i%?")
-            ("T" "Tickler" entry
-             (file+headline "~/org/gtd/tickler.org" "Tickler")
-             "* %i%? \n %^t")))
+	  '(("t" "Todo [inbox]" entry
+	     (file+headline "~/org/gtd/inbox.org" "Tasks")
+	     "* TODO %i%?")
+	    ("T" "Tickler" entry
+	     (file+headline "~/org/gtd/tickler.org" "Tickler")
+	     "* %i%? \n %^t")))
     (setq org-refile-targets
-          '(("~/org/gtd/gtd.org" :maxlevel . 3)
-            ("~/org/gtd/someday.org" :level . 1)
-            ("~/org/gtd/tickler.org" :maxlevel . 2)))
+	  '(("~/org/gtd/gtd.org" :maxlevel . 3)
+	    ("~/org/gtd/someday.org" :level . 1)
+	    ("~/org/gtd/tickler.org" :maxlevel . 2)))
     (setq org-todo-keywords '((sequence "TODO(t)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)")))
     (setq org-agenda-custom-commands
-          '(("@" "Contexts"
-             ((tags-todo "@email"
-                         ((org-agenda-overriding-header "Emails")))
-              (tags-todo "@phone"
-                         ((org-agenda-overriding-header "Phone")))))))
+	  '(("@" "Contexts"
+	     ((tags-todo "@email"
+			 ((org-agenda-overriding-header "Emails")))
+	      (tags-todo "@phone"
+			 ((org-agenda-overriding-header "Phone")))))))
     (setq org-clock-persist t)
     (org-clock-persistence-insinuate)
     (setq org-time-clocksum-format '(:hours "%d" :require-hours t :minutes ":%02d" :require-minutes t))))
@@ -664,7 +817,7 @@ unreadable. Returns the names of envvars that were changed."
   :straight (:type built-in)
   :after org
   :bind (:map org-mode-map
-              ("C-c C-x t" . org-inlinetask-insert-task))
+	      ("C-c C-x t" . org-inlinetask-insert-task))
   :after (org)
   :commands (org-inlinetask-insert-task))
 
@@ -675,37 +828,37 @@ unreadable. Returns the names of envvars that were changed."
   ;; :init (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1)))
   :custom
   ( org-bullets-bullet-list
-  '(;;; Large
-    ;; "◉"
-    ;; "○"
-    ;; "✸"
-    ;; "✿"
-    ;; ♥ ● ◇ ✚ ✜ ☯ ◆ ♠ ♣ ♦ ☢ ❀ ◆ ◖ ▶
+    '(;;; Large
+      ;; "◉"
+      ;; "○"
+      ;; "✸"
+      ;; "✿"
+      ;; ♥ ● ◇ ✚ ✜ ☯ ◆ ♠ ♣ ♦ ☢ ❀ ◆ ◖ ▶
     ;;; Small
-    "►"
-    "•"
-    "★"
-    "▸"
-    )))
-  
+      "►"
+      "•"
+      "★"
+      "▸"
+      )))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Utils
 ;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Copilot
-(use-package copilot
-  :straight (:host github :repo "zerolfx/copilot.el" :files ("dist" "*.el"))
-  :hook (prog-mode . copilot-mode)
-  ;; :bind (:map copilot-compilation-map
-  ;; 	      ("<tab>" . copilot-accept-completion)
-  ;; 	      ("TAB" . copilot-accept-completion))
-  :config
-  (define-key copilot-completion-map (kbd "<tab>") 'copilot-accept-completion)
-  (define-key copilot-completion-map (kbd "TAB") 'copilot-accept-completion))
+;; (use-package copilot
+;;   :straight (:host github :repo "zerolfx/copilot.el" :files ("dist" "*.el"))
+;;   :hook (prog-mode . copilot-mode)
+;;   ;; :bind (:map copilot-compilation-map
+;;   ;;               ("<tab>" . copilot-accept-completion)
+;;   ;;               ("TAB" . copilot-accept-completion))
+;;   :config
+;;   (define-key copilot-completion-map (kbd "<tab>") 'copilot-accept-completion)
+;;   (define-key copilot-completion-map (kbd "TAB") 'copilot-accept-completion))
 
 ;; flymake
 (use-package flycheck
-  :demand t)
+  :defer t)
 
 ;; Move text
 (use-package move-text
@@ -716,8 +869,8 @@ unreadable. Returns the names of envvars that were changed."
 ;; https://github.com/rexim/dotfiles/blob/25f8ddc6717e56f110e812fd0cec2f1a1dc9d8be/.emacs#L10
 compilation-error-regexp-alist-alist
 (add-to-list 'compilation-error-regexp-alist
-             '("\\([a-zA-Z0-9\\.]+\\)(\\([0-9]+\\)\\(,\\([0-9]+\\)\\)?) \\(Warning:\\)?"
-               1 2 (4) (5)))
+	     '("\\([a-zA-Z0-9\\.]+\\)(\\([0-9]+\\)\\(,\\([0-9]+\\)\\)?) \\(Warning:\\)?"
+	       1 2 (4) (5)))
 
 ;; Zoom In/Out
 ;; https://stackoverflow.com/a/60641769
@@ -729,10 +882,10 @@ compilation-error-regexp-alist-alist
 frame if FRAME is nil, and to 1 if AMT is nil."
   (interactive "p")
   (let* ((frame (or frame (selected-frame)))
-         (font (face-attribute 'default :font frame))
-         (size (font-get font :size))
-         (amt (or amt 1))
-         (new-size (+ size amt)))
+	 (font (face-attribute 'default :font frame))
+	 (size (font-get font :size))
+	 (amt (or amt 1))
+	 (new-size (+ size amt)))
     (set-frame-font (font-spec :size new-size) t `(,frame))
     (message "Frame's font new size: %d" new-size)))
 
@@ -771,7 +924,7 @@ frame if FRAME is nil, and to 1 if AMT is nil."
 
 ;; Trailing Whitespace
 (use-package ws-butler
-  :hook (prog-mode-hook . ws-butler-mode))
+  :hook (pog-mode-hook . ws-butler-mode))
 
 ;; Smartparents
 (use-package smartparens
@@ -785,7 +938,11 @@ frame if FRAME is nil, and to 1 if AMT is nil."
 ;; Crux
 (use-package crux
   :bind
-  ("C-k" . crux-smart-kill-line)
+  ("C-c k" . crux-smart-kill-line)
   ("C-c n" . crux-cleanup-buffer-or-region)
   ("C-c f" . crux-recentf-find-file)
   ("C-a" . crux-move-beginning-of-line))
+
+;; Rainbow
+(use-package rainbow-mode
+  :hook (prog-mode text-mode))
