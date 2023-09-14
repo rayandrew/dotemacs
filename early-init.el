@@ -30,6 +30,17 @@
 (push '(tool-bar-lines . 0) default-frame-alist)
 (push '(vertical-scroll-bars) default-frame-alist)
 
+;; Fonts
+(defun rs/get-default-font ()
+  (cond
+   ((eq system-type 'windows-nt) "Consolas-13")
+   ((eq system-type 'gnu/linux) "Iosevka-20")
+   ((eq system-type 'darwin) "Iosevka Nerd Font Mono-20")))
+(add-to-list 'default-frame-alist `(font . ,(rs/get-default-font)))
+;; (set-face-attribute 'default nil :family "UbuntuMono Nerd Font Mono" :height 160)
+;; (set-face-attribute 'default nil :family "Iosevka Nerd Font Mono" :height 180)
+;; (set-face-attribute 'default nil :family "Iosevka Comfy Wide" :height 180)
+
 ;; Give the frame basic coloring while waiting for the theme to load. The main
 ;; purpose of this is to not blind me when it's dark by flashing a screen full
 ;; of white. These colors are from doom-one.

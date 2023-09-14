@@ -22,17 +22,6 @@
 (defconst rs/env-file (concat rs/local-dir "env"))
 (defconst rs/help-key "C-?")
 
-(defun rs/get-default-font ()
-  (cond
-   ((eq system-type 'windows-nt) "Consolas-13")
-   ((eq system-type 'gnu/linux) "Iosevka-20")
-   ((eq system-type 'darwin) "Iosevka Nerd Font Mono-20")))
-(add-to-list 'default-frame-alist `(font . ,(rs/get-default-font)))
-;; (set-face-attribute 'default nil :family "UbuntuMono Nerd Font Mono" :height 160)
-;; (set-face-attribute 'default nil :family "Iosevka Nerd Font Mono" :height 180)
-;; (set-face-attribute 'default nil :family "Iosevka Comfy Wide" :height 180)
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Straight
 ;; Package Manager
@@ -487,26 +476,9 @@ unreadable. Returns the names of envvars that were changed."
   (add-hook 'text-mode-hook 'yas-minor-mode))
 
 (use-package corfu
-  ;; Optional customizations
   :custom
-  (corfu-cycle t)                ;; Enable cycling for `corfu-next/previous'
-  (corfu-auto t)                 ;; Enable auto completion
-  ;; (corfu-separator ?\s)          ;; Orderless field separator
-  ;; (corfu-quit-at-boundary nil)   ;; Never quit at completion boundary
-  ;; (corfu-quit-no-match nil)      ;; Never quit, even if there is no match
-  ;; (corfu-preview-current nil)    ;; Disable current candidate preview
-  ;; (corfu-preselect 'prompt)      ;; Preselect the prompt
-  ;; (corfu-on-exact-match nil)     ;; Configure handling of exact matches
-  ;; (corfu-scroll-margin 5)        ;; Use scroll margin
-
-  ;; Enable Corfu only for certain modes.
-  ;; :hook ((prog-mode . corfu-mode)
-  ;;        (shell-mode . corfu-mode)
-  ;;        (eshell-mode . corfu-mode))
-
-  ;; Recommended: Enable Corfu globally.
-  ;; This is recommended since Dabbrev can be used globally (M-/).
-  ;; See also `global-corfu-modes'.
+  (corfu-cycle t)
+  (corfu-auto t)
   :init
   (global-corfu-mode))
 
@@ -667,13 +639,7 @@ unreadable. Returns the names of envvars that were changed."
 ;;       (forward-line))))
 
 (defvar rs-font-lock-keywords
-  (list ;; '("^\\([ \t]+\\)?\\([A-Za-z09_]+\\)" 2 font-lock-keyword-face t)
-	;; '("!\\|" . font-lock-function-name-face)
-	;; '("!\\([^<]+?\\)\n" . (1 font-lock-function-name-face))
-	;; '("\\(^[^!\n].*$\\)" 0 font-lock-function-name-face)
-	;; '("\\(!.*\\)" 1 font-lock-function-name-face)
-	;; '("\\(!.*\\)" 0 font-lock-function-name-face)
-	'("^[\[[A-Za-z0-9_-]+\]" . font-lock-warning-face)
+  (list '("^[\[[A-Za-z0-9_-]+\]" . font-lock-warning-face)
 	'("--\\(\[A-Za-z0-9_-]+\\)" . font-lock-type-face)
 	;; '("--\\(\[A-Za-z0-9_-]+\\)" . font-lock-type-face)
 	'("!.+" . font-lock-warning-face)
@@ -687,7 +653,6 @@ unreadable. Returns the names of envvars that were changed."
 (define-derived-mode rs-mode prog-mode "RS"
   :syntax-table rs-mode-syntax-table
   :group 'rs
-  ;; (setq-local syntax-propertize-function '(rs-ampersand-propertize))
   (setq-local font-lock-defaults '(rs-font-lock-keywords))
   (setq-local comment-start ";;")
   (font-lock-fontify-buffer))
@@ -780,15 +745,15 @@ unreadable. Returns the names of envvars that were changed."
 ;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Copilot
-;; (use-package copilot
-;;   :straight (:host github :repo "zerolfx/copilot.el" :files ("dist" "*.el"))
-;;   :hook (prog-mode . copilot-mode)
-;;   ;; :bind (:map copilot-compilation-map
-;;   ;;               ("<tab>" . copilot-accept-completion)
-;;   ;;               ("TAB" . copilot-accept-completion))
-;;   :config
-;;   (define-key copilot-completion-map (kbd "<tab>") 'copilot-accept-completion)
-;;   (define-key copilot-completion-map (kbd "TAB") 'copilot-accept-completion))
+(use-package copilot
+  :straight (:host github :repo "zerolfx/copilot.el" :files ("dist" "*.el"))
+  :commands (copilot-mode)
+  ;; :bind (:map copilot-compilation-map
+  ;;               ("<tab>" . copilot-accept-completion)
+  ;;               ("TAB" . copilot-accept-completion))
+  :config
+  (define-key copilot-completion-map (kbd "<tab>") 'copilot-accept-completion)
+  (define-key copilot-completion-map (kbd "TAB") 'copilot-accept-completion))
 
 ;; flymake
 (use-package flycheck
@@ -871,10 +836,10 @@ frame if FRAME is nil, and to 1 if AMT is nil."
 ;; Crux
 (use-package crux
   :bind
-  ("C-c k" . crux-smart-kill-line)
-  ("C-c n" . crux-cleanup-buffer-or-region)
-  ("C-c f" . crux-recentf-find-file)
-  ("C-a" . crux-move-beginning-of-line))
+  ("C-c C-k" . crux-smart-kill-line)
+  ("C-c C-n" . crux-cleanup-buffer-or-region)
+  ("C-c C-f" . crux-recentf-find-file)
+  ("C-c C-a" . crux-move-beginning-of-line))
 
 ;; Rainbow
 (use-package rainbow-mode
