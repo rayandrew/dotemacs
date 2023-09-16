@@ -21,6 +21,7 @@
 (defconst rs/local-dir (concat rs/emacs-dir ".local/"))
 (defconst rs/env-file (concat rs/local-dir "env"))
 (defconst rs/help-key "C-?")
+(defconst rs/column-indicator 100)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Straight
@@ -82,6 +83,13 @@
 (recentf-mode t)
 (setq recentf-max-saved-items 50)
 
+;; Column Indicator
+(setq-default display-fill-column-indicator-column rs/column-indicator)
+(add-hook 'prog-mode-hook 'display-fill-column-indicator-mode)
+
+;; Save last line of edited files
+(save-place-mode 1)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Use package
 ;;;;;;;;;;;;;;;;;;;;;;;;
@@ -137,7 +145,6 @@
 (use-package vertico
   :ensure t
   :init
-  ;; Enable completion by narrowing
   (vertico-mode t))
 
 (use-package vertico-indexed
@@ -151,8 +158,6 @@
 (use-package vertico-flat
   :after vertico
   :ensure nil)
-  ;; :init
-  ;; (vertico-flat-mode t))
 
 (use-package vertico-multiform
   :after vertico
@@ -407,7 +412,8 @@ unreadable. Returns the names of envvars that were changed."
 ;; https://stackoverflow.com/a/61169654
 (add-to-list 'tramp-remote-path 'tramp-own-remote-path)
 
-(setq-default tramp-shell-prompt-pattern "\\(?:^\\|\r\\)[^]#$%>\n]*#?[]#$%>].* *\\(^[\\[[0-9;]*[a-zA-Z] *\\)*")
+(setq-default tramp-shell-prompt-pattern
+	      "\\(?:^\\|\r\\)[^]#$%>\n]*#?[]#$%>].* *\\(^[\\[[0-9;]*[a-zA-Z] *\\)*")
 
 ;; Tramp SSH password
 (setq password-cache-expiry nil)
@@ -426,7 +432,8 @@ unreadable. Returns the names of envvars that were changed."
 (straight-use-package '(lsp-mode :files (:defaults "clients/*")
 				 :includes (lsp-nix)))
 
-(use-package lsp-mode  
+(use-package lsp-mode
+  :after (corfu cape)
   :commands (lsp lsp-deferred)
   :custom
   (lsp-completion-provider :none) ;; using corfu
@@ -444,12 +451,27 @@ unreadable. Returns the names of envvars that were changed."
   (lsp-rust-analyzer-display-reborrow-hints nil)
   :init
   (setq lsp-keymap-prefix "C-c l")
+
+  (defun rs/orderless-dispatch-flex-first (_pattern index _total)
+    (and (eq index 0) 'orderless-flex))
+
   (defun rs/lsp-mode-setup-completion ()
     (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
-          '(flex))) ;; Configure flex  
-  (defun rs/lsp-mode-setup ()
-    (setq lsp-headerline-breadcrumb-segments '(path-up-to-project file symbols))
-    (lsp-headerline-breadcrumb-mode))
+          '(orderless)))
+
+  ;; Optionally configure the first word as flex filtered.
+  (add-hook 'orderless-style-dispatchers #'rs/orderless-dispatch-flex-first nil 'local)
+
+  ;; Optionally configure the cape-capf-buster.
+  (setq-local completion-at-point-functions (list (cape-capf-buster #'lsp-completion-at-point)))
+
+  ;; (defun rs/lsp-mode-setup-completion ()
+  ;;   (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
+  ;;         '(flex))) ;; Configure flex  
+  ;; (defun rs/lsp-mode-setup ()
+  ;;   (setq lsp-headerline-breadcrumb-segments '(path-up-to-project file symbols))
+  ;;   (lsp-headerline-breadcrumb-mode))
+  
   :hook ((lsp-mode . rs/lsp-mode-setup)
 	 (lsp-mode . lsp-enable-which-key-integration)
 	 (lsp-mode . lsp-ui-mode)  
@@ -474,6 +496,8 @@ unreadable. Returns the names of envvars that were changed."
   (yas-reload-all)
   (add-hook 'prog-mode-hook 'yas-minor-mode)
   (add-hook 'text-mode-hook 'yas-minor-mode))
+
+(use-package cape)
 
 (use-package corfu
   :custom
@@ -501,6 +525,10 @@ unreadable. Returns the names of envvars that were changed."
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Programming Language
 ;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; C
+(setq-default c-basic-offset 4)
+(add-hook 'c-mode-hook (lambda () (c-toggle-comment-style -1)))
 
 ;; Latex
 (use-package lsp-latex
@@ -579,28 +607,6 @@ unreadable. Returns the names of envvars that were changed."
   (let ((map (make-keymap)))
     map))
 
-(defun xah-select-text-in-bracket ()
-  "Select text between the nearest brackets.
-➢ for example:  () [] {} «» ‹› “” 〖〗 【】 「」 『』 （） 〈〉 《》 〔〕 ⦗⦘ 〘〙 ⦅⦆ 〚〛 ⦃⦄ ⟨⟩."
-  (interactive)
-  (let (pos p1 p2 (parse-sexp-lookup-properties nil)
-	    (-temp-syn-table (make-syntax-table)))
-    (modify-syntax-entry ?\« "(»" -temp-syn-table)
-    (modify-syntax-entry ?\» ")«" -temp-syn-table)
-    (modify-syntax-entry ?\‹ "(›" -temp-syn-table)
-    (modify-syntax-entry ?\› ")‹" -temp-syn-table)
-    (modify-syntax-entry ?\“ "(”" -temp-syn-table)
-    (modify-syntax-entry ?\” ")“" -temp-syn-table)
-
-    (with-syntax-table -temp-syn-table
-      (setq pos (point))
-      (search-backward-regexp "\\s(" nil t )
-      (setq p1 (point))
-      (forward-sexp 1)
-      (setq p2 (point))
-      (goto-char (1+ p1))
-      (set-mark (1- p2)))))
-
 (defvar rs-mode-syntax-table
   (with-syntax-table (copy-syntax-table)
     ;; comment
@@ -619,34 +625,24 @@ unreadable. Returns the names of envvars that were changed."
     (syntax-table))
   "'rs-mode' syntax table ")
 
-;; (defvar rs-highlights
-;;   '(("!\\|" . font-lock-function-name-face)
-;;     ("!\\([^<]+?\\)" . (1 font-lock-function-name-face))))
-
 (defgroup rs nil
-  "Major mode for editing K code."
+  "Major mode for editing RS code."
   :prefix 'rs
   :group 'languages)
 
-;; (defun rs-exclamation-propertize (begin end)
-;;   (save-excursion
-;;     (goto-char begin)
-;;     (while (< (point) end)
-;;       (unless (eolp)
-;;         (unless (eq (following-char) ?!)
-;;           (put-text-property (point) (+ (point) 1)
-;;                              'syntax-table (string-to-syntax "<"))))
-;;       (forward-line))))
-
 (defvar rs-font-lock-keywords
-  (list '("^[\[[A-Za-z0-9_-]+\]" . font-lock-warning-face)
+  (list '("[\[[A-Za-z0-9_-]+\]" . font-lock-warning-face)
 	'("--\\(\[A-Za-z0-9_-]+\\)" . font-lock-type-face)
-	;; '("--\\(\[A-Za-z0-9_-]+\\)" . font-lock-type-face)
-	'("!.+" . font-lock-warning-face)
-	;; '(">.+" . font-lock-variable-name-face)
-	'(">.+" . font-lock-keyword-face)
+	'("!!.+" . font-lock-warning-face)
 	'("#.+" . font-lock-string-face)
-	'("-.+" . font-lock-doc-face)
+	;; '(">.+" . font-lock-variable-name-face)
+	'("^\s*-.+" . font-lock-doc-face)
+	;; '("--\\(\[A-Za-z0-9_-]+\\)" . font-lock-type-face)
+	'("^\s*>.+" . font-lock-keyword-face)
+	;; '("^\s*>\s[A-Za-z0-9_-].*" 0 font-lock-keyword-face)
+	;; '("^\s*>\s[A-Za-z0-9_-].*" 1 font-lock-keyword-face)
+	;; '("^\s*$\s[A-Za-z0-9_-].*" 1 font-lock-constant-face)
+	;; '("#.*[A-Za-z0-9-_].*")
 	;; '("\\(\$[0-9]+\\)[^0-9]" 1 font-lock-constant-face)
 	'("\$[A-Za-z0-9_\-]+" . font-lock-variable-name-face)))
 
@@ -709,7 +705,10 @@ unreadable. Returns the names of envvars that were changed."
 			 ((org-agenda-overriding-header "Phone")))))))
     (setq org-clock-persist t)
     (org-clock-persistence-insinuate)
-    (setq org-time-clocksum-format '(:hours "%d" :require-hours t :minutes ":%02d" :require-minutes t))))
+    (setq org-time-clocksum-format '(:hours "%d"
+				     :require-hours t
+				     :minutes ":%02d"
+				     :require-minutes t))))
 
 (use-package org-inlinetask
   :ensure nil
@@ -839,11 +838,9 @@ frame if FRAME is nil, and to 1 if AMT is nil."
   ("C-c C-k" . crux-smart-kill-line)
   ("C-c C-n" . crux-cleanup-buffer-or-region)
   ("C-c C-f" . crux-recentf-find-file)
-  ("C-c C-a" . crux-move-beginning-of-line))
+  ("C-c C-a" . move-beginning-of-line)
+  ("C-a" . crux-move-beginning-of-line))
 
 ;; Rainbow
-(use-package rainbow-mode
-  :hook (prog-mode text-mode))
-
 (use-package rainbow-delimiters
   :hook (prog-mode . rainbow-delimiters-mode))

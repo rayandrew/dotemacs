@@ -61,3 +61,6 @@ undo-fu-session
 projects
 history
 image-dired
+recentf
+places
+.lsp-session*
