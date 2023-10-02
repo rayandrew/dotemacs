@@ -7,25 +7,48 @@
 
 ;;; Code:
 
-(defconst emacs-start-time (current-time))
-
 ;; Uncomment this to debug.
 ;; (setq init-file-debug t)
 ;; (setq messages-buffer-max-lines 100000)
 
+;; These are good notes on optimizing startup performance:
+;; https://github.com/hlissner/doom-emacs/wiki/FAQ#how-is-dooms-startup-so-fast
+
+;; Unset `file-name-handler-alist' too (temporarily). Every file opened and
+;; loaded by Emacs will run through this list to check for a proper handler for
+;; the file, but during startup, it won’t need any of them.
+
+;; (defvar file-name-handler-alist-old file-name-handler-alist)
+;; (setq file-name-handler-alist nil)
+;; (add-hook 'emacs-startup-hook
+;;           (lambda ()
+;;             (setq file-name-handler-alist file-name-handler-alist-old)))
+
+(setq gc-cons-threshold 452653184 gc-cons-percentage 0.6)
+
+(defvar rs/startup/file-name-handler-alist file-name-handler-alist)
+(setq file-name-handler-alist nil)
+
+(defun rs/startup/revert-file-name-handler-alist ()
+  (setq file-name-handler-alist rs/startup/file-name-handler-alist))
+
+(defun rs/startup/reset-gc ()
+  (setq gc-cons-threshold 16777216 gc-cons-percentage 0.1))
+
+(add-hook 'emacs-startup-hook 'rs/startup/revert-file-name-handler-alist)
+(add-hook 'emacs-startup-hook 'rs/startup/reset-gc)
+
+;; Disable `package' in favor of `straight'.
+(setq package-enable-at-startup nil)
+
 ;; If an `.el' file is newer than its corresponding `.elc', load the `.el'.
 (setq load-prefer-newer noninteractive)
-
-;; Set Garbage Collection threshold to 1GB during startup. `gcmh' will clean
-;; things up later.
-(setq gc-cons-threshold most-positive-fixnum
-      gc-cons-percentage 0.6)
 
 ;; Write any customizations to a temp file so they are discarded.
 (setq custom-file (make-temp-file "custom-" nil ".el"))
 
 ;; Faster to disable these here (before they've been initialized)
-(push '(undecorated . t) default-frame-alist)
+;; (push '(undecorated . t) default-frame-alist)
 (push '(menu-bar-lines . 0) default-frame-alist)
 (push '(tool-bar-lines . 0) default-frame-alist)
 (push '(vertical-scroll-bars) default-frame-alist)
@@ -34,8 +57,8 @@
 (defun rs/get-default-font ()
   (cond
    ((eq system-type 'windows-nt) "Consolas-13")
-   ((eq system-type 'gnu/linux) "Iosevka-20")
-   ((eq system-type 'darwin) "Iosevka Nerd Font Mono-20")))
+   ((eq system-type 'gnu/linux) "Iosevka-16")
+   ((eq system-type 'darwin) "Iosevka Nerd Font Mono-16")))
 (add-to-list 'default-frame-alist `(font . ,(rs/get-default-font)))
 ;; (set-face-attribute 'default nil :family "UbuntuMono Nerd Font Mono" :height 160)
 ;; (set-face-attribute 'default nil :family "Iosevka Nerd Font Mono" :height 180)
@@ -48,6 +71,7 @@
 ;; (set-face-attribute 'default nil :background "gray15" :foreground "#bdbdb3")
 ;; (set-face-attribute 'default nil :background "#202020" :foreground "#c4ad63") ;; alect-black
 (set-face-attribute 'default nil :background "#181818" :foreground "#c4ad63") ;; gruber-darker
+;; (set-face-attribute 'default nil :background "#171717" :foreground "#F6F3E8") ;; badger
 
 ;; Default frame settings. This is actually maximized, not full screen.
 (push '(fullscreen . maximized) initial-frame-alist)
@@ -64,25 +88,26 @@
 ;; cursor color is concerned).
 (advice-add #'x-apply-session-resources :override #'ignore)
 
-;; These are good notes on optimizing startup performance:
-;; https://github.com/hlissner/doom-emacs/wiki/FAQ#how-is-dooms-startup-so-fast
-
-;; Unset `file-name-handler-alist' too (temporarily). Every file opened and
-;; loaded by Emacs will run through this list to check for a proper handler for
-;; the file, but during startup, it won’t need any of them.
-(defvar file-name-handler-alist-old file-name-handler-alist)
-(setq file-name-handler-alist nil)
-(add-hook 'emacs-startup-hook
-          (lambda ()
-            (setq file-name-handler-alist file-name-handler-alist-old)))
-
-;; Disable `package' in favor of `straight'.
-(setq package-enable-at-startup nil)
-
 (menu-bar-mode -1) ;; Disable the menu bar
 (tool-bar-mode -1) ;; Disable the tool bar
 (scroll-bar-mode -1) ;; Disable the scroll bars
 (setq inhibit-startup-screen t) ;; Disable splash screen
+
+;;;;;;;;;;;;;;;;;;;;;;;;
+;; Startup
+;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; https://systemcrafters.net/emacs-from-scratch/cut-start-up-time-in-half/
+
+(defun rs/display-startup-time ()
+  (message "Emacs loaded in %s with %d garbage collections."
+           (format "%.2f seconds"
+                   (float-time
+                    (time-subtract after-init-time before-init-time)))
+           gcs-done))
+
+(add-hook 'emacs-startup-hook #'rs/display-startup-time)
+
 
 (provide 'early-init)
 
