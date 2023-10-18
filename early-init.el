@@ -24,7 +24,13 @@
 ;;           (lambda ()
 ;;             (setq file-name-handler-alist file-name-handler-alist-old)))
 
-(setq gc-cons-threshold 452653184 gc-cons-percentage 0.6)
+;; (setq gc-cons-threshold 452653184
+;;       gc-cons-percentage 0.6)
+(setq gc-cons-threshold most-positive-fixnum
+      gc-cons-percentage 1)
+
+(defconst rs/default-gc-cons-threshold (* 2 1024 1024))
+(defconst rs/default-gc-cons-percentage 0.1)
 
 (defvar rs/startup/file-name-handler-alist file-name-handler-alist)
 (setq file-name-handler-alist nil)
@@ -33,7 +39,7 @@
   (setq file-name-handler-alist rs/startup/file-name-handler-alist))
 
 (defun rs/startup/reset-gc ()
-  (setq gc-cons-threshold 16777216 gc-cons-percentage 0.1))
+  (setq gc-cons-threshold rs/default-gc-cons-threshold gc-cons-percentage rs/default-gc-cons-percentage))
 
 (add-hook 'emacs-startup-hook 'rs/startup/revert-file-name-handler-alist)
 (add-hook 'emacs-startup-hook 'rs/startup/reset-gc)
@@ -67,11 +73,15 @@
 ;; Give the frame basic coloring while waiting for the theme to load. The main
 ;; purpose of this is to not blind me when it's dark by flashing a screen full
 ;; of white. These colors are from doom-one.
-;; (set-face-attribute 'default nil :background "#282c34" :foreground "#bbc2cf")
-;; (set-face-attribute 'default nil :background "gray15" :foreground "#bdbdb3")
-;; (set-face-attribute 'default nil :background "#202020" :foreground "#c4ad63") ;; alect-black
-(set-face-attribute 'default nil :background "#181818" :foreground "#c4ad63") ;; gruber-darker
-;; (set-face-attribute 'default nil :background "#171717" :foreground "#F6F3E8") ;; badger
+;; (set-face-attribute 'default nil :background "#181818" :foreground "#c4ad63") ;; gruber-darker
+;; (set-face-attribute 'default nil :background "#062329" :foreground "#d1b897") ;; naysayer
+;; (set-face-attribute 'default nil :background "#041818" :foreground "#d3b58d") ;; naysayer
+;; (set-face-attribute 'default nil :background "#052b2a" :foreground "#c5bfa3") ;; naysayer latest
+;; (set-face-attribute 'default nil :background "#242424" :foreground "#f6f3e8") ;; wombat
+;; (set-face-attribute 'default nil :background "#f6f7f8" :foreground "#3B5998") ;; mccarthy
+;; (set-face-attribute 'default nil :background "#FFFFFF" :foreground "#505050") ;; twilight-bright
+;; (set-face-attribute 'default nil :background "#FFFFFF" :foreground "#000000") ;; tango-plus
+;; (set-face-attribute 'default nil :background "#ecf0f1" :foreground "#425d78") ;; flucui-light
 
 ;; Default frame settings. This is actually maximized, not full screen.
 (push '(fullscreen . maximized) initial-frame-alist)
@@ -99,15 +109,14 @@
 
 ;; https://systemcrafters.net/emacs-from-scratch/cut-start-up-time-in-half/
 
-(defun rs/display-startup-time ()
-  (message "Emacs loaded in %s with %d garbage collections."
-           (format "%.2f seconds"
-                   (float-time
-                    (time-subtract after-init-time before-init-time)))
-           gcs-done))
+;; (defun rs/display-startup-time ()
+;;   (message "Emacs loaded in %s with %d garbage collections."
+;;            (format "%.2f seconds"
+;;                    (float-time
+;;                     (time-subtract after-init-time before-init-time)))
+;;            gcs-done))
 
-(add-hook 'emacs-startup-hook #'rs/display-startup-time)
-
+;; (add-hook 'emacs-startup-hook #'rs/display-startup-time)
 
 (provide 'early-init)
 

@@ -58,9 +58,16 @@ cache
 straight
 transient
 undo-fu-session
+undo
 projects
 history
 image-dired
 recentf
 places
 .lsp-session*
+.last-package-update-day
+.mc-lists.el
+bookmarks
+org-clock-save.el
+org-roam.db
+tree-sitter
